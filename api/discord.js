@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   const GUILD_ID = "1527997892449796176"; // 村サーバーのID
   
   try {
-    // ① チャンネル一覧の取得（フォーラムのスレッドも綺麗に整理して表示する）
+    // ① チャンネル一覧の取得（親チャンネルとスレッドの関係を整理して返す）
     if (req.method === 'GET' && req.query.action === 'getChannels') {
       const cRes = await fetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, { headers: { 'Authorization': `Bot ${BOT_TOKEN}` } });
       const channels = await cRes.json();
@@ -14,26 +14,17 @@ export default async function handler(req, res) {
       
       let list = [];
       if (Array.isArray(channels)) {
-        // テキスト(0), アナウンス(5), フォーラム(15) を抽出して並び替え
         const mainChannels = channels.filter(c => c.type === 0 || c.type === 5 || c.type === 15);
         mainChannels.sort((a, b) => a.position - b.position);
         
         mainChannels.forEach(c => {
-          // 通常のチャンネルをそのまま追加
-          if (c.type === 0 || c.type === 5) {
-            list.push({ id: c.id, name: c.name });
-          }
+          // 親チャンネル（isThread: false, parentId: null を持たせる）
+          list.push({ id: c.id, name: c.name, type: c.type, isThread: false, parentId: null });
           
-          // このチャンネル(フォーラム含む)に属するスレッドを探して追加
+          // このチャンネルに属するスレッドを探す
           const childThreads = threads.filter(t => t.parent_id === c.id);
           childThreads.forEach(t => {
-            if (c.type === 15) {
-              // フォーラム内のスレッドは [フォーラム名] をつける
-              list.push({ id: t.id, name: `💬 [${c.name}] ${t.name}` });
-            } else {
-              // 通常チャンネル内のスレッドは字下げして分かりやすくする
-              list.push({ id: t.id, name: ` ↳ 💬 ${t.name}` });
-            }
+            list.push({ id: t.id, name: t.name, type: t.type, isThread: true, parentId: c.id });
           });
         });
       }
@@ -47,9 +38,9 @@ export default async function handler(req, res) {
       return res.status(200).json(await response.json());
     }
     
-    // ③ メッセージと画像の送信
+    // ③ メッセージ・画像・スレッドの送信
     if (req.method === 'POST') {
-      const { action, channelId, content, username, avatar_url, imageBase64, imageName } = req.body;
+      const { action, channelId, content, username, avatar_url, imageBase64, imageName, threadName } = req.body;
       if (action === 'sendMessage') {
         
         const chRes = await fetch(`https://discord.com/api/v10/channels/${channelId}`, { headers: { 'Authorization': `Bot ${BOT_TOKEN}` } });
@@ -75,9 +66,9 @@ export default async function handler(req, res) {
         }
         
         let url = `https://discord.com/api/webhooks/${webhook.id}/${webhook.token}`;
+        // 既存のスレッドへの送信の場合
         if (isThread) url += `?thread_id=${channelId}`;
 
-        // アイコン処理: 画像ファイル(Base64)が設定された場合は、名前からイニシャル画像を生成して割り当てる
         let safeAvatarUrl = avatar_url;
         if (safeAvatarUrl && safeAvatarUrl.startsWith('data:')) {
           safeAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&color=fff`;
@@ -90,7 +81,11 @@ export default async function handler(req, res) {
           content: content || "" 
         }));
         
-        // 画像送信処理の修正: サーバー環境でエラーが起きないよう、fetchを使ってBlobに変換する
+        // ★新規スレッド作成の場合はパラメータを追加
+        if (threadName) {
+            formData.append('thread_name', threadName);
+        }
+        
         if (imageBase64) {
           try {
             const base64Response = await fetch(imageBase64);

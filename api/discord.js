@@ -69,9 +69,20 @@ export default async function handler(req, res) {
         let url = `https://discord.com/api/webhooks/${webhook.id}/${webhook.token}`;
         if (isThread) url += `?thread_id=${channelId}`;
 
+        // ▼▼▼ 修正箇所：カスタムアイコン(Base64)が送られた場合は安全なデフォルト画像に差し替える ▼▼▼
+        let safeAvatarUrl = avatar_url;
+        if (safeAvatarUrl && safeAvatarUrl.startsWith('data:')) {
+          safeAvatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png';
+        }
+
         // 画像とテキストを「FormData」という形式にまとめてDiscordへ送る
         const formData = new FormData();
-        formData.append('payload_json', JSON.stringify({ username, avatar_url, content: content || "" }));
+        formData.append('payload_json', JSON.stringify({ 
+          username: username, 
+          avatar_url: safeAvatarUrl, 
+          content: content || "" 
+        }));
+        // ▲▲▲ 修正箇所ここまで ▲▲▲
         
         if (imageBase64) {
           const matches = imageBase64.match(/^data:(.+);base64,(.+)$/);

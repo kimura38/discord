@@ -15,9 +15,11 @@
     * { box-sizing: border-box; }
     body { margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-primary); color: var(--text-normal); display: flex; height: 100vh; overflow: hidden; }
 
+    /* ログイン画面 */
     #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; background-color: var(--bg-primary); position: absolute; z-index: 100; }
     .login-box { background: var(--bg-secondary); padding: 40px; border-radius: 8px; text-align: center; }
     
+    /* メインレイアウト */
     #app-screen { display: flex; width: 100vw; height: 100vh; }
     .sidebar { width: 240px; background-color: var(--bg-secondary); display: flex; flex-direction: column; }
     .sidebar-header { height: 48px; padding: 0 16px; display: flex; align-items: center; font-weight: bold; border-bottom: 1px solid var(--bg-tertiary); }
@@ -26,16 +28,18 @@
     .channel-item:hover { background-color: rgba(79,84,92,0.32); color: var(--text-normal); }
     .channel-item.active { background-color: rgba(79,84,92,0.6); color: var(--header-primary); }
 
+    /* ユーザーパネル */
     .user-panel { background-color: #292b2f; padding: 0 8px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-    .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-grow: 1; overflow: hidden; }
+    .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-grow: 1; overflow: hidden; padding: 4px; border-radius: 4px; }
+    .user-info:hover { background-color: rgba(79,84,92,0.32); }
     .user-info img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
     .user-text { display: flex; flex-direction: column; overflow: hidden; }
     .user-text .name { font-size: 0.9em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+    /* チャットエリア */
     .chat-container { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--bg-primary); }
     .chat-header { height: 48px; border-bottom: 1px solid var(--bg-tertiary); display: flex; align-items: center; padding: 0 16px; font-weight: bold; }
     .chat-messages { flex-grow: 1; padding: 16px 0; overflow-y: auto; display: flex; flex-direction: column; }
-    
     .message { display: flex; gap: 16px; padding: 4px 16px; margin-top: 12px; }
     .message:hover { background-color: var(--bg-message-hover); }
     .message img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
@@ -47,7 +51,18 @@
 
     .chat-input-area { padding: 0 16px 24px 16px; }
     .chat-input-wrapper { display: flex; align-items: center; background-color: var(--input-bg); border-radius: 8px; padding: 0 16px; gap: 12px; }
-    .chat-input-wrapper input { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; padding: 14px 0; }
+    .chat-input-wrapper input { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; padding: 14px 0; font-size: 1em; }
+
+    /* 設定モーダル */
+    .settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; }
+    .settings-content { background: var(--bg-primary); width: 400px; padding: 24px; border-radius: 8px; }
+    .settings-content h3 { margin-top: 0; color: var(--header-primary); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 8px; font-size: 0.8em; font-weight: bold; color: var(--text-muted); }
+    .form-group input[type="text"] { width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid #000; border-radius: 4px; color: var(--text-normal); }
+    .btn-save { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; width: 100%; }
+    .btn-close { background: transparent; color: var(--text-muted); border: none; padding: 10px; cursor: pointer; width: 100%; margin-top: 8px; }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -66,19 +81,38 @@
     </div>
   </div>
 
+  <!-- 設定モーダル -->
+  <div id="settings-modal" class="settings-modal">
+    <div class="settings-content">
+      <h3>プロフィール設定</h3>
+      <div class="form-group">
+        <label>表示名</label>
+        <input type="text" id="custom-name" placeholder="新しい名前を入力">
+      </div>
+      <div class="form-group">
+        <label>アイコンを変更 (画像ファイル)</label>
+        <input type="file" id="custom-icon-file" accept="image/*" style="color: white;">
+      </div>
+      <button class="btn-save" onclick="saveProfile()">保存する</button>
+      <button class="btn-close" onclick="closeSettings()">キャンセル</button>
+    </div>
+  </div>
+
   <!-- メイン画面 -->
   <div id="app-screen" class="hidden">
     <div class="sidebar">
       <div class="sidebar-header">マイサーバー</div>
-      <div class="channel-list" id="channel-list">
-        <!-- チャンネルリストがここに生成されます -->
-      </div>
+      <div class="channel-list" id="channel-list"></div>
+      
+      <!-- ユーザーパネル -->
       <div class="user-panel">
-        <div class="user-info">
+        <!-- ユーザー情報をクリックで設定画面を開く -->
+        <div class="user-info" onclick="openSettings()">
           <img id="sidebar-icon" src="">
           <div class="user-text"><span class="name" id="sidebar-name">ユーザー</span></div>
         </div>
-        <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
+        <button onclick="openSettings()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="設定"><i class="fa-solid fa-gear"></i></button>
+        <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer;" title="ログアウト"><i class="fa-solid fa-right-from-bracket"></i></button>
       </div>
     </div>
 
@@ -94,16 +128,15 @@
   </div>
 
   <script>
-    // ★いただいたWebhook URLを組み込んだチャンネル設定
-    // IDは履歴取得（Step2）で使うための本物のチャンネルIDを後で入れます
+    // --- チャンネル設定 ---
     const channels = [
       { 
-        id: '111111111111111111', // ← 後で「一般」のチャンネルIDに変えます
+        id: '1531217686049329273', // ※もし取得に失敗する場合は、ここを「チャンネルID」に書き換えてください
         name: '一般', 
         webhook: 'https://discord.com/api/webhooks/1538126374131208192/DBVgsnjhQ69ZVmwj1lFdgGHhtEhppOijrhsWzdqdSI2AoS9uLo6D-Kc2OMZ7N1PcJKgT' 
       },
       { 
-        id: '222222222222222222', // ← 後で「サバイバル鯖」のチャンネルIDに変えます
+        id: '1527997892449796178', // サバイバル鯖のチャンネルIDを入れてください
         name: 'サバイバル鯖', 
         webhook: 'https://discord.com/api/webhooks/1538144498045947966/_63dPn0yzv1SThEfCKQW6vdVl0OjHgbr1T2yZ6xUgpThoAS4sYbb4jBda3WAYMfQev-b' 
       }
@@ -113,10 +146,40 @@
     let currentChannel = channels[0];
     let pollInterval = null;
 
+    // --- Cookie操作用の関数 ---
+    function setCookie(name, value, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+      document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+    }
+
+    function getCookie(name) {
+      const cname = name + "=";
+      const ca = document.cookie.split(';');
+      for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1);
+        if (c.indexOf(cname) == 0) return decodeURIComponent(c.substring(cname.length, c.length));
+      }
+      return "";
+    }
+
+    function deleteCookie(name) {
+      document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
+
+    // --- 初期化処理 ---
     window.onload = () => {
-      const savedUser = localStorage.getItem('discordUser');
-      if (savedUser) {
-        currentUser = JSON.parse(savedUser);
+      // Cookieからユーザー名を取得
+      const savedName = getCookie('discordChatName');
+      // 画像は容量が大きいため localStorage から取得
+      const savedPic = localStorage.getItem('discordChatPic');
+
+      if (savedName) {
+        currentUser = { 
+          name: savedName, 
+          picture: savedPic || 'https://cdn.discordapp.com/embed/avatars/0.png' 
+        };
         loginSuccess();
       }
       renderChannelList();
@@ -125,7 +188,11 @@
     function handleCredentialResponse(response) {
       const payload = decodeJwtResponse(response.credential);
       currentUser = { name: payload.name, picture: payload.picture };
-      localStorage.setItem('discordUser', JSON.stringify(currentUser));
+      
+      // 初回ログイン時にCookieとlocalStorageに保存
+      setCookie('discordChatName', currentUser.name, 30);
+      localStorage.setItem('discordChatPic', currentUser.picture);
+      
       loginSuccess();
     }
 
@@ -137,6 +204,53 @@
       switchChannel(currentChannel.id);
     }
 
+    // --- 設定（プロフィール変更） ---
+    function openSettings() {
+      document.getElementById('custom-name').value = currentUser.name;
+      document.getElementById('settings-modal').style.display = 'flex';
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-modal').style.display = 'none';
+      document.getElementById('custom-icon-file').value = '';
+    }
+
+    function saveProfile() {
+      const newName = document.getElementById('custom-name').value;
+      const fileInput = document.getElementById('custom-icon-file');
+      
+      if (!newName) return alert('表示名を入力してください');
+      
+      currentUser.name = newName;
+      setCookie('discordChatName', newName, 30); // 名前はCookieに保存
+
+      // 画像が選択されている場合
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          currentUser.picture = e.target.result;
+          localStorage.setItem('discordChatPic', currentUser.picture); // 画像はlocalStorageに保存
+          updateProfileUI();
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        updateProfileUI();
+      }
+    }
+
+    function updateProfileUI() {
+      document.getElementById('sidebar-name').textContent = currentUser.name;
+      document.getElementById('sidebar-icon').src = currentUser.picture;
+      closeSettings();
+    }
+
+    function logout() {
+      deleteCookie('discordChatName');
+      localStorage.removeItem('discordChatPic');
+      location.reload();
+    }
+
+    // --- チャンネル & メッセージ処理 ---
     function renderChannelList() {
       const listDiv = document.getElementById('channel-list');
       listDiv.innerHTML = '';
@@ -159,7 +273,6 @@
       startPolling();
     }
 
-    // --- メッセージの取得（後でVercelと連携） ---
     function startPolling() {
       fetchMessages();
       if (pollInterval) clearInterval(pollInterval);
@@ -168,14 +281,13 @@
 
     async function fetchMessages() {
       try {
-        // VercelのAPIを呼び出す設定 (現状はまだAPIが無いのでエラーになりますが、コードは完成させています)
         const res = await fetch(`/api/messages?channelId=${currentChannel.id}`);
         if (!res.ok) return;
         
         const messages = await res.json();
         renderMessages(messages);
       } catch (e) {
-        // console.log('メッセージ取得待機中...'); // エラーがうるさいのでコメントアウト
+        // エラー無視
       }
     }
 
@@ -209,7 +321,6 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    // --- メッセージの送信 ---
     function sendMessage() {
       const input = document.getElementById('message-input');
       const text = input.value.trim();
@@ -231,11 +342,6 @@
 
     function handleKeyPress(e) {
       if (e.key === 'Enter') sendMessage();
-    }
-
-    function logout() {
-      localStorage.removeItem('discordUser');
-      location.reload();
     }
 
     function decodeJwtResponse(token) {

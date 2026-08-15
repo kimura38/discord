@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   const { channelId } = req.query;
   
   // いただいたBotトークンを直接指定しています
-  const BOT_TOKEN = "DISCORD_BOT_TOKEN";
+  const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 
   if (!channelId) {
     return res.status(400).json({ error: 'channelIdが指定されていません' });

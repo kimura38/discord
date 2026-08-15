@@ -7,82 +7,339 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    /* --- カラー設定 --- */
     :root {
-      --bg-tertiary: #202225; --bg-secondary: #2f3136; --bg-primary: #36393f;
-      --bg-message-hover: #32353b; --text-normal: #dcddde; --text-muted: #8e9297;
-      --header-primary: #ffffff; --accent: #5865F2; --accent-hover: #4752C4;
-      --danger: #ed4245; --input-bg: #40444b;
+      --bg-tertiary: #202225;
+      --bg-secondary: #2f3136;
+      --bg-primary: #36393f;
+      --bg-message-hover: #32353b;
+      --text-normal: #dcddde;
+      --text-muted: #8e9297;
+      --header-primary: #ffffff;
+      --accent: #5865F2;
+      --input-bg: #40444b;
     }
+    
     * { box-sizing: border-box; }
     
-    /* スマホ対応: 100dvh を追加 */
-    body { margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-primary); color: var(--text-normal); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
+    /* スマホのメニューバーの干渉を防ぐ 100dvh */
+    body { 
+      margin: 0; 
+      font-family: 'Helvetica Neue', Arial, sans-serif; 
+      background-color: var(--bg-primary); 
+      color: var(--text-normal); 
+      display: flex; 
+      height: 100vh; 
+      height: 100dvh; 
+      overflow: hidden; 
+    }
 
-    /* ログイン画面 */
-    #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; height: 100dvh; background-color: var(--bg-primary); position: absolute; z-index: 100; }
-    .login-box { background: var(--bg-secondary); padding: 40px; border-radius: 8px; text-align: center; width: 90%; max-width: 400px; }
+    /* --- ログイン画面 --- */
+    #login-screen { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      width: 100vw; 
+      height: 100vh; 
+      height: 100dvh; 
+      background-color: var(--bg-primary); 
+      position: absolute; 
+      z-index: 100; 
+    }
+    .login-box { 
+      background: var(--bg-secondary); 
+      padding: 40px; 
+      border-radius: 8px; 
+      text-align: center; 
+      width: 90%; 
+      max-width: 400px; 
+    }
     
-    /* メインレイアウト */
-    #app-screen { display: flex; width: 100vw; height: 100vh; height: 100dvh; position: relative; }
+    /* --- メインレイアウト --- */
+    #app-screen { 
+      display: flex; 
+      width: 100vw; 
+      height: 100vh; 
+      height: 100dvh; 
+      position: relative; 
+    }
     
-    /* サイドバー (チャンネル一覧) */
-    .sidebar { width: 240px; background-color: var(--bg-secondary); display: flex; flex-direction: column; transition: left 0.3s ease; }
-    .sidebar-header { height: 48px; padding: 0 16px; display: flex; align-items: center; font-weight: bold; border-bottom: 1px solid var(--bg-tertiary); box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-    .channel-list { flex-grow: 1; padding: 12px 8px; overflow-y: auto; }
-    .channel-item { padding: 8px; margin-bottom: 4px; border-radius: 4px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; cursor: pointer; }
-    .channel-item:hover { background-color: rgba(79,84,92,0.32); color: var(--text-normal); }
-    .channel-item.active { background-color: rgba(79,84,92,0.6); color: var(--header-primary); }
+    /* --- サイドバー (チャンネル一覧) --- */
+    .sidebar { 
+      width: 240px; 
+      background-color: var(--bg-secondary); 
+      display: flex; 
+      flex-direction: column; 
+      transition: left 0.3s ease; 
+    }
+    .sidebar-header { 
+      height: 48px; 
+      padding: 0 16px; 
+      display: flex; 
+      align-items: center; 
+      font-weight: bold; 
+      border-bottom: 1px solid var(--bg-tertiary); 
+    }
+    .channel-list { 
+      flex-grow: 1; 
+      padding: 12px 8px; 
+      overflow-y: auto; 
+    }
+    .channel-item { 
+      padding: 8px; 
+      margin-bottom: 4px; 
+      border-radius: 4px; 
+      color: var(--text-muted); 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      cursor: pointer; 
+    }
+    .channel-item:hover { 
+      background-color: rgba(79,84,92,0.32); 
+      color: var(--text-normal); 
+    }
+    .channel-item.active { 
+      background-color: rgba(79,84,92,0.6); 
+      color: var(--header-primary); 
+    }
 
-    /* ユーザーパネル */
-    .user-panel { background-color: #292b2f; padding: 0 8px; height: 52px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-grow: 1; overflow: hidden; padding: 4px; border-radius: 4px; }
-    .user-info:hover { background-color: rgba(79,84,92,0.32); }
-    .user-info img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-    .user-text { display: flex; flex-direction: column; overflow: hidden; }
-    .user-text .name { font-size: 0.9em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--header-primary); }
+    /* --- ユーザーパネル --- */
+    .user-panel { 
+      background-color: #292b2f; 
+      padding: 0 8px; 
+      height: 52px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      flex-shrink: 0; 
+    }
+    .user-info { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      cursor: pointer; 
+      flex-grow: 1; 
+      overflow: hidden; 
+    }
+    .user-info img { 
+      width: 32px; 
+      height: 32px; 
+      border-radius: 50%; 
+      object-fit: cover; 
+    }
+    .user-text { 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+    }
+    .user-text .name { 
+      font-size: 0.9em; 
+      font-weight: bold; 
+      white-space: nowrap; 
+      text-overflow: ellipsis; 
+    }
 
-    /* チャットエリア */
-    .chat-container { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--bg-primary); min-width: 0; }
-    .chat-header { height: 48px; border-bottom: 1px solid var(--bg-tertiary); display: flex; align-items: center; padding: 0 16px; font-weight: bold; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-    .mobile-menu-btn { display: none; color: var(--text-normal); font-size: 1.4em; margin-right: 16px; cursor: pointer; }
+    /* --- チャットエリア --- */
+    .chat-container { 
+      flex-grow: 1; 
+      display: flex; 
+      flex-direction: column; 
+      background-color: var(--bg-primary); 
+      min-width: 0; 
+    }
+    .chat-header { 
+      height: 48px; 
+      border-bottom: 1px solid var(--bg-tertiary); 
+      display: flex; 
+      align-items: center; 
+      padding: 0 16px; 
+      font-weight: bold; 
+    }
+    .mobile-menu-btn { 
+      display: none; 
+      color: var(--text-normal); 
+      font-size: 1.4em; 
+      margin-right: 16px; 
+      cursor: pointer; 
+    }
     
-    .chat-messages { flex-grow: 1; padding: 16px 0; overflow-y: auto; display: flex; flex-direction: column; }
-    .message { display: flex; gap: 16px; padding: 4px 16px; margin-top: 12px; }
-    .message:hover { background-color: var(--bg-message-hover); }
-    .message img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-    .message-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-    .message-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
-    .message-header .user-name { font-weight: 500; color: var(--header-primary); }
-    .message-header .timestamp { font-size: 0.75em; color: var(--text-muted); }
-    .message-text { color: var(--text-normal); word-break: break-word; white-space: pre-wrap; line-height: 1.4; }
+    .chat-messages { 
+      flex-grow: 1; 
+      padding: 16px 0; 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+    }
+    .message { 
+      display: flex; 
+      gap: 16px; 
+      padding: 4px 16px; 
+      margin-top: 12px; 
+    }
+    .message img.avatar { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      object-fit: cover; 
+      flex-shrink: 0; 
+    }
+    .message-content { 
+      flex-grow: 1; 
+      display: flex; 
+      flex-direction: column; 
+      min-width: 0; 
+    }
+    .message-header { 
+      display: flex; 
+      align-items: baseline; 
+      gap: 8px; 
+      margin-bottom: 4px; 
+    }
+    .message-header .user-name { 
+      font-weight: 500; 
+      color: var(--header-primary); 
+    }
+    .message-text { 
+      color: var(--text-normal); 
+      word-break: break-word; 
+      white-space: pre-wrap; 
+      line-height: 1.4; 
+    }
     
-    /* 埋め込み(Embed)やマイクラ通知の装飾 */
-    .embed-box { border-left: 4px solid var(--accent); background: rgba(0,0,0,0.15); padding: 8px 12px; margin-top: 4px; border-radius: 4px; }
-    .embed-title { font-weight: bold; margin-bottom: 4px; color: var(--header-primary); }
+    /* 添付画像・Embedデザイン */
+    .msg-attachment-img { 
+      max-width: 80%; 
+      max-height: 300px; 
+      border-radius: 8px; 
+      margin-top: 8px; 
+      cursor: pointer; 
+      object-fit: contain; 
+      background: #202225; 
+    }
+    .embed-box { 
+      border-left: 4px solid var(--accent); 
+      background: rgba(0,0,0,0.15); 
+      padding: 8px 12px; 
+      margin-top: 4px; 
+      border-radius: 4px; 
+    }
+    
+    /* --- 入力エリア（画像プレビュー対応） --- */
+    .chat-input-area { 
+      padding: 0 16px 24px 16px; 
+      flex-shrink: 0; 
+      position: relative; 
+    }
+    .preview-container { 
+      display: none; 
+      background: var(--bg-secondary); 
+      padding: 12px; 
+      border-radius: 8px 8px 0 0; 
+      border-bottom: 1px solid var(--bg-tertiary); 
+      position: relative; 
+    }
+    .preview-container img { 
+      max-height: 100px; 
+      border-radius: 4px; 
+    }
+    .preview-close { 
+      position: absolute; 
+      top: 8px; 
+      left: 100px; 
+      background: rgba(0,0,0,0.6); 
+      color: white; 
+      border: none; 
+      border-radius: 50%; 
+      width: 24px; 
+      height: 24px; 
+      cursor: pointer; 
+    }
+    
+    .chat-input-wrapper { 
+      display: flex; 
+      align-items: center; 
+      background-color: var(--input-bg); 
+      border-radius: 8px; 
+      padding: 0 16px; 
+      gap: 12px; 
+    }
+    /* Preview表示時は下だけ丸くする */
+    .has-preview .chat-input-wrapper { 
+      border-radius: 0 0 8px 8px; 
+    }
+    
+    .file-upload-btn { 
+      color: var(--text-muted); 
+      cursor: pointer; 
+      font-size: 1.2em; 
+      padding: 10px 0; 
+    }
+    .file-upload-btn:hover { 
+      color: var(--text-normal); 
+    }
+    .chat-input-wrapper input[type="text"] { 
+      flex-grow: 1; 
+      background: transparent; 
+      border: none; 
+      color: var(--text-normal); 
+      outline: none; 
+      padding: 14px 0; 
+      font-size: 1em; 
+    }
 
-    .chat-input-area { padding: 0 16px 24px 16px; flex-shrink: 0; }
-    .chat-input-wrapper { display: flex; align-items: center; background-color: var(--input-bg); border-radius: 8px; padding: 0 16px; gap: 12px; }
-    .chat-input-wrapper input { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; padding: 14px 0; font-size: 1em; }
-
-    /* 設定モーダル */
-    .settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; }
-    .settings-content { background: var(--bg-primary); width: 90%; max-width: 400px; padding: 24px; border-radius: 8px; }
-    .settings-content h3 { margin-top: 0; color: var(--header-primary); }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 8px; font-size: 0.8em; font-weight: bold; color: var(--text-muted); }
-    .form-group input[type="text"] { width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid #000; border-radius: 4px; color: var(--text-normal); }
-    .btn-save { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1em; }
-    .btn-close { background: transparent; color: var(--text-muted); border: none; padding: 10px; cursor: pointer; width: 100%; margin-top: 8px; }
+    /* --- 設定モーダル --- */
+    .settings-modal { 
+      display: none; 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      height: 100dvh; 
+      background: rgba(0,0,0,0.7); 
+      z-index: 200; 
+      justify-content: center; 
+      align-items: center; 
+    }
+    .settings-content { 
+      background: var(--bg-primary); 
+      width: 90%; 
+      max-width: 400px; 
+      padding: 24px; 
+      border-radius: 8px; 
+    }
 
     /* --- スマホ向けUI設定 --- */
     @media (max-width: 768px) {
-      .sidebar { position: fixed; left: -260px; top: 0; bottom: 0; z-index: 1000; width: 260px; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
+      .sidebar { 
+        position: fixed; 
+        left: -260px; 
+        top: 0; 
+        bottom: 0; 
+        z-index: 1000; 
+        width: 260px; 
+        box-shadow: 2px 0 5px rgba(0,0,0,0.5); 
+      }
       .sidebar.show { left: 0; }
       .mobile-menu-btn { display: inline-block !important; }
-      .mobile-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(0,0,0,0.6); z-index: 999; }
+      .mobile-overlay { 
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100vw; 
+        height: 100vh; 
+        height: 100dvh; 
+        background: rgba(0,0,0,0.6); 
+        z-index: 999; 
+      }
       .mobile-overlay.show { display: block; }
-      /* iPhoneの下の線に被らないようにする魔法のコード */
-      .chat-input-area { padding: 0 8px calc(12px + env(safe-area-inset-bottom)) 8px; }
+      /* iPhoneのホームインジケーター（下の線）対策 */
+      .chat-input-area { 
+        padding: 0 8px calc(12px + env(safe-area-inset-bottom)) 8px; 
+      }
     }
     .hidden { display: none !important; }
   </style>
@@ -93,52 +350,40 @@
   <div id="login-screen">
     <div class="login-box">
       <h2 style="color:white; margin-top:0;">村サーバーへようこそ</h2>
-      <p style="color:var(--text-muted); margin-bottom:24px;">Googleでログインしてください</p>
-      <div id="g_id_onload"
-           data-client_id="1088837422614-mme9r7callo83q6d8uga2ga12pteftjs.apps.googleusercontent.com" 
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
+      <div id="g_id_onload" data-client_id="1088837422614-mme9r7callo83q6d8uga2ga12pteftjs.apps.googleusercontent.com" data-callback="handleCredentialResponse"></div>
       <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large"></div>
     </div>
   </div>
 
-  <!-- 設定モーダル -->
+  <!-- 設定画面 -->
   <div id="settings-modal" class="settings-modal">
     <div class="settings-content">
-      <h3>プロフィール設定</h3>
-      <div class="form-group">
-        <label>表示名</label>
-        <input type="text" id="custom-name" placeholder="新しい名前を入力">
-      </div>
-      <div class="form-group">
-        <label>アイコンを変更 (画像ファイル)</label>
-        <input type="file" id="custom-icon-file" accept="image/*" style="color: white; width: 100%;">
-      </div>
-      <button class="btn-save" onclick="saveProfile()">保存する</button>
-      <button class="btn-close" onclick="closeSettings()">キャンセル</button>
+      <h3 style="margin-top:0;">プロフィール設定</h3>
+      <p style="font-size:0.8em; color:var(--text-muted);">表示名</p>
+      <input type="text" id="custom-name" style="width:100%; padding:10px; background:var(--bg-tertiary); border:none; color:white; border-radius:4px; margin-bottom:15px;">
+      <p style="font-size:0.8em; color:var(--text-muted);">アイコン (画像ファイル)</p>
+      <input type="file" id="custom-icon-file" accept="image/*" style="color:white; margin-bottom:20px;">
+      <button onclick="saveProfile()" style="background:var(--accent); color:white; border:none; padding:10px; width:100%; border-radius:4px; cursor:pointer;">保存する</button>
+      <button onclick="closeSettings()" style="background:transparent; color:var(--text-muted); border:none; padding:10px; width:100%; margin-top:8px; cursor:pointer;">キャンセル</button>
     </div>
   </div>
 
   <!-- メイン画面 -->
   <div id="app-screen" class="hidden">
-    <!-- スマホ用メニュー背景 -->
+    <!-- スマホ用の黒い背景 -->
     <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMenu()"></div>
 
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">村サーバー</div>
       <div class="channel-list" id="channel-list">
-        <!-- チャンネルは自動で読み込まれます -->
-        <div style="color:var(--text-muted); text-align:center; margin-top:20px;">読込中...</div>
+        <div style="text-align:center; margin-top:20px;">読込中...</div>
       </div>
-      
       <div class="user-panel">
         <div class="user-info" onclick="openSettings()">
           <img id="sidebar-icon" src="">
           <div class="user-text"><span class="name" id="sidebar-name">ユーザー</span></div>
         </div>
-        <button onclick="openSettings()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;" title="設定"><i class="fa-solid fa-gear"></i></button>
-        <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer;" title="ログアウト"><i class="fa-solid fa-right-from-bracket"></i></button>
+        <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
       </div>
     </div>
 
@@ -148,9 +393,26 @@
         <i class="fa-solid fa-hashtag" style="color:var(--text-muted); margin-right:8px;"></i>
         <span id="current-channel-title">ロード中...</span>
       </div>
+      
+      <!-- メッセージ表示エリア -->
       <div class="chat-messages" id="chat-messages"></div>
-      <div class="chat-input-area">
+      
+      <!-- メッセージ入力エリア -->
+      <div class="chat-input-area" id="input-area">
+        
+        <!-- 画像プレビュー -->
+        <div class="preview-container" id="preview-container">
+          <img id="preview-img" src="">
+          <button class="preview-close" onclick="removeImage()">×</button>
+        </div>
+        
         <div class="chat-input-wrapper">
+          <!-- 画像添付ボタン -->
+          <label class="file-upload-btn" title="画像を添付">
+            <i class="fa-solid fa-circle-plus"></i>
+            <input type="file" id="chat-image-input" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+          </label>
+          <!-- テキスト入力 -->
           <input type="text" id="message-input" placeholder="メッセージを送信" onkeypress="handleKeyPress(event)">
         </div>
       </div>
@@ -158,230 +420,331 @@
   </div>
 
   <script>
-    let currentUser = null;
-    let currentChannelId = null;
-    let currentChannelName = "";
+    // --- グローバル変数 ---
+    let currentUser = null; 
+    let currentChannelId = null; 
+    let currentChannelName = ""; 
     let pollInterval = null;
+    let selectedImageBase64 = null; 
+    let selectedImageName = null;
 
-    // --- Cookie操作 ---
-    function setCookie(name, value, days) {
-      const d = new Date();
-      d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-      document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+    // --- Cookieを操作する関数 ---
+    function setCookie(name, value, days) { 
+      const dt = new Date(); 
+      dt.setTime(dt.getTime() + (days * 24 * 60 * 60 * 1000)); 
+      document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + dt.toUTCString() + ";path=/"; 
     }
-    function getCookie(name) {
-      const cname = name + "=";
-      const ca = document.cookie.split(';');
-      for(let i = 0; i < ca.length; i++) {
-        let c = ca[i].trim();
-        if (c.indexOf(cname) == 0) return decodeURIComponent(c.substring(cname.length, c.length));
-      }
-      return "";
-    }
-    function deleteCookie(name) {
-      document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    function getCookie(name) { 
+      const cn = name + "="; 
+      const ca = document.cookie.split(';'); 
+      for(let c of ca) { 
+        c = c.trim(); 
+        if(c.indexOf(cn) === 0) return decodeURIComponent(c.substring(cn.length)); 
+      } 
+      return ""; 
     }
 
-    // --- 初期化処理 ---
+    // --- 初期ロード処理 ---
     window.onload = () => {
+      // 以前のログイン情報が残っていれば自動ログイン
       const savedName = getCookie('discordChatName');
-      const savedPic = localStorage.getItem('discordChatPic');
-
-      if (savedName) {
-        currentUser = { name: savedName, picture: savedPic || 'https://cdn.discordapp.com/embed/avatars/0.png' };
-        loginSuccess();
+      if(savedName) { 
+        currentUser = { 
+          name: savedName, 
+          picture: localStorage.getItem('discordChatPic') || 'https://cdn.discordapp.com/embed/avatars/0.png' 
+        }; 
+        loginSuccess(); 
       }
     };
 
+    // --- Googleログイン処理 ---
     function handleCredentialResponse(response) {
-      const payload = JSON.parse(decodeURIComponent(atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+      // Googleから送られてきた暗号データを解読
+      const payload = JSON.parse(decodeURIComponent(atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
       currentUser = { name: payload.name, picture: payload.picture };
-      setCookie('discordChatName', currentUser.name, 30);
-      localStorage.setItem('discordChatPic', currentUser.picture);
+      
+      // 情報を保存
+      setCookie('discordChatName', payload.name, 30); 
+      localStorage.setItem('discordChatPic', payload.picture);
+      
       loginSuccess();
     }
 
     function loginSuccess() {
-      document.getElementById('sidebar-name').textContent = currentUser.name;
+      // 画面の見た目を切り替え
+      document.getElementById('sidebar-name').textContent = currentUser.name; 
       document.getElementById('sidebar-icon').src = currentUser.picture;
-      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.add('hidden'); 
       document.getElementById('app-screen').classList.remove('hidden');
+      
+      // チャンネル一覧を取得
       loadChannels();
     }
 
-    // --- チャンネル一覧の自動取得 ---
+    // --- チャンネル一覧を取得・表示 ---
     async function loadChannels() {
       try {
-        const res = await fetch('/api/discord?action=getChannels');
+        const res = await fetch('/api/discord?action=getChannels'); 
         const channels = await res.json();
-        
-        const listDiv = document.getElementById('channel-list');
+        const listDiv = document.getElementById('channel-list'); 
         listDiv.innerHTML = '';
         
-        channels.forEach((ch, index) => {
-          if (!currentChannelId && index === 0) {
-            currentChannelId = ch.id;
-            currentChannelName = ch.name;
+        channels.forEach((ch, idx) => {
+          // 最初に見つかったチャンネルを初期選択にする
+          if (!currentChannelId && idx === 0) { 
+            currentChannelId = ch.id; 
+            currentChannelName = ch.name; 
           }
-          const div = document.createElement('div');
+          
+          const div = document.createElement('div'); 
           div.className = `channel-item ${ch.id === currentChannelId ? 'active' : ''}`;
-          div.innerHTML = `<i class="fa-solid fa-hashtag"></i> ${ch.name}`;
-          div.onclick = () => switchChannel(ch.id, ch.name);
+          
+          // フォーラムの場合は💬マーク、通常は＃マーク
+          div.innerHTML = ch.name.includes('💬') ? ch.name : `<i class="fa-solid fa-hashtag"></i> ${ch.name}`;
+          div.onclick = () => switchChannel(ch.id, ch.name); 
+          
           listDiv.appendChild(div);
         });
-
-        if (currentChannelId) switchChannel(currentChannelId, currentChannelName);
-      } catch (e) {
-        document.getElementById('channel-list').innerHTML = '<div style="color:#ed4245; padding:10px;">取得エラー</div>';
+        
+        // メッセージの読み込み開始
+        if(currentChannelId) switchChannel(currentChannelId, currentChannelName);
+      } catch(e) {
+        console.error(e);
       }
     }
 
-    function switchChannel(channelId, channelName) {
-      currentChannelId = channelId;
-      currentChannelName = channelName;
-      document.getElementById('current-channel-title').textContent = channelName;
-      document.getElementById('message-input').placeholder = `# ${channelName} にメッセージを送信`;
+    // --- チャンネル切り替え ---
+    function switchChannel(id, name) {
+      currentChannelId = id; 
+      currentChannelName = name;
       
-      // 見た目の更新
-      document.querySelectorAll('.channel-item').forEach(el => {
-        el.classList.remove('active');
-        if(el.innerText.trim() === channelName) el.classList.add('active');
+      document.getElementById('current-channel-title').textContent = name;
+      document.getElementById('message-input').placeholder = `${name} にメッセージを送信`;
+      
+      // 左のメニューの選択状態（色）を更新
+      document.querySelectorAll('.channel-item').forEach(el => { 
+        el.classList.remove('active'); 
+        if(el.innerText.trim() === name.trim() || el.innerText.includes(name.replace('💬 ',''))) {
+          el.classList.add('active'); 
+        }
       });
-
-      // スマホならメニューを閉じる
-      document.getElementById('sidebar').classList.remove('show');
+      
+      // スマホの場合はメニューを閉じる
+      document.getElementById('sidebar').classList.remove('show'); 
       document.getElementById('mobile-overlay').classList.remove('show');
-
-      document.getElementById('chat-messages').innerHTML = '';
+      
+      // メッセージをクリアして再取得
+      document.getElementById('chat-messages').innerHTML = ''; 
       startPolling();
     }
 
-    function toggleMenu() {
-      document.getElementById('sidebar').classList.toggle('show');
-      document.getElementById('mobile-overlay').classList.toggle('show');
+    // --- スマホ用メニュー開閉 ---
+    function toggleMenu() { 
+      document.getElementById('sidebar').classList.toggle('show'); 
+      document.getElementById('mobile-overlay').classList.toggle('show'); 
     }
 
-    // --- メッセージ処理 ---
-    function startPolling() {
-      fetchMessages();
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(fetchMessages, 4000);
+    // --- メッセージの定期取得 ---
+    function startPolling() { 
+      fetchMessages(); 
+      if(pollInterval) clearInterval(pollInterval); 
+      pollInterval = setInterval(fetchMessages, 4000); 
     }
 
     async function fetchMessages() {
       try {
         const res = await fetch(`/api/discord?action=getMessages&channelId=${currentChannelId}`);
-        if (!res.ok) return;
-        const messages = await res.json();
-        renderMessages(messages);
-      } catch (e) {}
+        if(!res.ok) return; 
+        renderMessages(await res.json());
+      } catch(e) {}
     }
 
+    // --- メッセージを画面に描画 ---
     function renderMessages(messages) {
-      const container = document.getElementById('chat-messages');
+      const container = document.getElementById('chat-messages'); 
       container.innerHTML = ''; 
       
       messages.slice().reverse().forEach(msg => {
-        const div = document.createElement('div');
+        const div = document.createElement('div'); 
         div.className = 'message';
         
-        let avatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
-        if (msg.author.avatar) avatar = `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png`;
-        else if (msg.author.avatar_url) avatar = msg.author.avatar_url; 
+        // アイコン画像の設定
+        let avatar = msg.author.avatar ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png` : (msg.author.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png');
         
-        const d = new Date(msg.timestamp);
+        // 日付のフォーマット
+        const d = new Date(msg.timestamp); 
         const timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-
+        
+        // テキストのサニタイズ（安全化）
         let textContent = escapeHtml(msg.content);
 
-        // 特殊な埋め込みメッセージ（Embed）の解析と表示
-        if (msg.embeds && msg.embeds.length > 0) {
-          msg.embeds.forEach(embed => {
-            let colorCode = embed.color ? '#' + embed.color.toString(16).padStart(6, '0') : 'var(--accent)';
-            let embedHtml = `<div class="embed-box" style="border-left-color: ${colorCode};">`;
-            if (embed.author && embed.author.name) embedHtml += `<div style="font-size:0.85em; font-weight:bold; margin-bottom:4px;">${escapeHtml(embed.author.name)}</div>`;
-            if (embed.title) embedHtml += `<div class="embed-title">${escapeHtml(embed.title)}</div>`;
-            if (embed.description) embedHtml += `<div>${escapeHtml(embed.description).replace(/\n/g, '<br>')}</div>`;
-            embedHtml += `</div>`;
-            textContent += embedHtml;
+        // ★Discordの画像・ファイルの表示処理
+        if (msg.attachments && msg.attachments.length > 0) {
+          msg.attachments.forEach(att => {
+            if (att.content_type && att.content_type.startsWith('image/')) {
+              textContent += `<br><img src="${att.url}" class="msg-attachment-img" onclick="window.open('${att.url}')">`;
+            } else {
+              textContent += `<br><a href="${att.url}" target="_blank" style="color:var(--accent);">📎 ${escapeHtml(att.filename)}</a>`;
+            }
           });
         }
 
+        // ★マイクラ通知等（Embed）の表示処理
+        if (msg.embeds && msg.embeds.length > 0) {
+          msg.embeds.forEach(em => {
+            let col = em.color ? '#' + em.color.toString(16).padStart(6,'0') : 'var(--accent)';
+            let eh = `<div class="embed-box" style="border-left-color:${col};">`;
+            
+            if(em.author && em.author.name) eh += `<div style="font-size:0.85em; font-weight:bold;">${escapeHtml(em.author.name)}</div>`;
+            if(em.title) eh += `<div class="embed-title">${escapeHtml(em.title)}</div>`;
+            if(em.description) eh += `<div>${escapeHtml(em.description).replace(/\n/g,'<br>')}</div>`;
+            
+            textContent += eh + `</div>`;
+          });
+        }
+
+        // 最終的なHTMLを組み立てて追加
         div.innerHTML = `
-          <img src="${avatar}">
+          <img src="${avatar}" class="avatar">
           <div class="message-content">
             <div class="message-header">
               <span class="user-name">${escapeHtml(msg.author.username)}</span>
-              <span class="timestamp">${timeStr}</span>
+              <span style="font-size:0.75em; color:var(--text-muted);">${timeStr}</span>
             </div>
             <div class="message-text">${textContent}</div>
-          </div>
-        `;
+          </div>`;
+          
         container.appendChild(div);
       });
+      
+      // 一番下までスクロール
       container.scrollTop = container.scrollHeight;
     }
 
-    function sendMessage() {
+    // --- 画像のアップロード選択 ---
+    function handleImageSelect(e) {
+      const file = e.target.files[0]; 
+      if(!file) return;
+      
+      selectedImageName = file.name;
+      const reader = new FileReader();
+      
+      // 画像を読み込んでプレビューを表示
+      reader.onload = function(evt) {
+        selectedImageBase64 = evt.target.result;
+        document.getElementById('preview-img').src = selectedImageBase64;
+        document.getElementById('preview-container').style.display = 'block';
+        document.getElementById('input-area').classList.add('has-preview');
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    // --- 画像の取り消し ---
+    function removeImage() {
+      selectedImageBase64 = null; 
+      selectedImageName = null;
+      document.getElementById('chat-image-input').value = '';
+      document.getElementById('preview-container').style.display = 'none';
+      document.getElementById('input-area').classList.remove('has-preview');
+    }
+
+    // --- メッセージ・画像の送信処理 ---
+    async function sendMessage() {
       const input = document.getElementById('message-input');
       const text = input.value.trim();
-      if (!text || !currentUser || !currentChannelId) return;
+      
+      // テキストも画像もない場合は送らない
+      if ((!text && !selectedImageBase64) || !currentUser || !currentChannelId) return;
 
-      // APIに送信を依頼
-      fetch('/api/discord', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'sendMessage',
-          channelId: currentChannelId,
-          username: currentUser.name,
-          avatar_url: currentUser.picture,
-          content: text
-        })
-      }).then(() => {
-        input.value = '';
-        setTimeout(fetchMessages, 500);
-      });
+      input.disabled = true; // 連打防止
+      
+      try {
+        const res = await fetch('/api/discord', {
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'sendMessage', 
+            channelId: currentChannelId,
+            username: currentUser.name, 
+            avatar_url: currentUser.picture, 
+            content: text,
+            imageBase64: selectedImageBase64, 
+            imageName: selectedImageName
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          // エラーの内容を画面に出す
+          alert("送信に失敗しました！\n理由: " + (data.error || "不明なエラー"));
+        } else {
+          // 成功したら入力欄と画像をリセット
+          input.value = ''; 
+          removeImage(); 
+          setTimeout(fetchMessages, 500);
+        }
+      } catch(err) {
+        alert("通信エラーが発生しました: " + err);
+      }
+      
+      input.disabled = false; 
+      input.focus();
     }
 
-    function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
-
-    // --- プロフィール・その他 ---
-    function openSettings() {
-      document.getElementById('custom-name').value = currentUser.name;
-      document.getElementById('settings-modal').style.display = 'flex';
-      document.getElementById('sidebar').classList.remove('show');
-      document.getElementById('mobile-overlay').classList.remove('show');
+    // エンターキーで送信
+    function handleKeyPress(e) { 
+      if(e.key === 'Enter') sendMessage(); 
     }
-    function closeSettings() {
-      document.getElementById('settings-modal').style.display = 'none';
-      document.getElementById('custom-icon-file').value = '';
+    
+    // --- プロフィール設定関連 ---
+    function openSettings() { 
+      document.getElementById('custom-name').value = currentUser.name; 
+      document.getElementById('settings-modal').style.display = 'flex'; 
     }
+    
+    function closeSettings() { 
+      document.getElementById('settings-modal').style.display = 'none'; 
+    }
+    
     function saveProfile() {
-      const newName = document.getElementById('custom-name').value;
-      const fileInput = document.getElementById('custom-icon-file');
-      if (!newName) return alert('表示名を入力してください');
-      currentUser.name = newName;
-      setCookie('discordChatName', newName, 30);
-      if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          currentUser.picture = e.target.result;
-          localStorage.setItem('discordChatPic', currentUser.picture);
-          updateProfileUI();
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-      } else updateProfileUI();
+      const nn = document.getElementById('custom-name').value; 
+      const fi = document.getElementById('custom-icon-file');
+      
+      if(!nn) return; 
+      
+      currentUser.name = nn; 
+      setCookie('discordChatName', nn, 30);
+      
+      if(fi.files && fi.files[0]) {
+        const r = new FileReader(); 
+        r.onload = e => { 
+          currentUser.picture = e.target.result; 
+          localStorage.setItem('discordChatPic', currentUser.picture); 
+          updateProfileUI(); 
+        }; 
+        r.readAsDataURL(fi.files[0]);
+      } else {
+        updateProfileUI();
+      }
     }
-    function updateProfileUI() {
-      document.getElementById('sidebar-name').textContent = currentUser.name;
-      document.getElementById('sidebar-icon').src = currentUser.picture;
-      closeSettings();
+    
+    function updateProfileUI() { 
+      document.getElementById('sidebar-name').textContent = currentUser.name; 
+      document.getElementById('sidebar-icon').src = currentUser.picture; 
+      closeSettings(); 
     }
-    function logout() { deleteCookie('discordChatName'); localStorage.removeItem('discordChatPic'); location.reload(); }
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&'`<>]/g, match => ({ '&': '&amp;', "'": '&#x27;', '`': '&#x60;', '<': '&lt;', '>': '&gt;' }[match]));
+    
+    function logout() { 
+      deleteCookie('discordChatName'); 
+      localStorage.removeItem('discordChatPic'); 
+      location.reload(); 
+    }
+    
+    // --- セキュリティ対策（XSS防止） ---
+    function escapeHtml(str) { 
+      return !str ? '' : str.replace(/[&'`<>]/g, m => ({ '&':'&amp;', "'":'&#x27;', '`':'&#x60;', '<':'&lt;', '>':'&gt;' }[m])); 
     }
   </script>
 </body>

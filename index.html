@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Discord Webチャット</title>
+  <!-- Googleログイン用のライブラリ -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
+    .hidden { display: none; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .profile-section { border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #fafafa; }
+    .chat-section { border: 1px solid #7289da; padding: 15px; border-radius: 5px; }
+    .icon { width: 45px; height: 45px; border-radius: 50%; vertical-align: middle; object-fit: cover; }
+    input[type="text"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 80%; max-width: 300px; }
+    button { padding: 8px 15px; border: none; border-radius: 4px; background-color: #7289da; color: white; cursor: pointer; }
+    button:hover { background-color: #5b6eae; }
+    .logout-btn { background-color: #dc3545; }
+    .logout-btn:hover { background-color: #c82333; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2 style="text-align: center; color: #333;">Discord Webチャット連携</h2>
+
+    <!-- ログイン前：Googleログインボタン -->
+    <div id="login-area" style="text-align: center; margin-top: 40px;">
+      <p>発言するにはGoogleアカウントでログインしてください</p>
+      <div id="g_id_onload"
+           data-client_id="1088837422614-mme9r7callo83q6d8uga2ga12pteftjs.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse">
+      </div>
+      <div class="g_id_signin" data-type="standard" style="display: inline-block;"></div>
+    </div>
+
+    <!-- ログイン後：メイン画面 -->
+    <div id="main-area" class="hidden">
+      
+      <!-- 現在のユーザー情報表示 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <img id="display-icon" class="icon" src="" alt="アイコン">
+          <span id="display-name" style="font-weight: bold; font-size: 1.1em; color: #333;"></span>
+        </div>
+        <button class="logout-btn" onclick="logout()">ログアウト</button>
+      </div>
+
+      <!-- プロフィール設定エリア -->
+      <div class="profile-section">
+        <h3 style="margin-top: 0; font-size: 1.1em;">⚙️ プロフィール設定 (変更可能)</h3>
+        <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">※変更した内容はあなたのブラウザに保存され、Discordでの発言時に使われます。</p>
+        
+        <div style="margin-bottom: 10px;">
+          <label style="font-size: 0.9em;">名前:</label><br>
+          <input type="text" id="custom-name" placeholder="表示させたい名前">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="font-size: 0.9em;">アイコンURL (任意):</label><br>
+          <input type="text" id="custom-icon-url" placeholder="https://...">
+        </div>
+        <button onclick="saveProfile()">プロフィールを保存</button>
+      </div>
+
+      <!-- チャット送信エリア -->
+      <div class="chat-section">
+        <h3 style="margin-top: 0; font-size: 1.1em; color: #7289da;">💬 メッセージ送信</h3>
+        <input type="text" id="message" placeholder="Discordへ送るメッセージを入力" style="width: 75%;">
+        <button onclick="sendMessage()">送信する</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ★Webhook URL
+    const WEBHOOK_URL = 'https://discord.com/api/webhooks/1538126374131208192/DBVgsnjhQ69ZVmwj1lFdgGHhtEhppOijrhsWzdqdSI2AoS9uLo6D-Kc2OMZ7N1PcJKgT';
+
+    let currentUser = null;
+
+    // Googleログイン成功時の処理
+    function handleCredentialResponse(response) {
+      const responsePayload = decodeJwtResponse(response.credential);
+
+      // 1. ブラウザ(localStorage)に保存されているカスタム設定があるか確認
+      const savedName = localStorage.getItem('customName');
+      const savedIcon = localStorage.getItem('customIcon');
+
+      // 2. 保存されていればそれを、なければGoogleの初期データを適用
+      currentUser = {
+        name: savedName ? savedName : responsePayload.name,
+        picture: savedIcon ? savedIcon : responsePayload.picture
+      };
+
+      // 3. 画面の表示を更新
+      updateUI();
+
+      // 4. カスタム設定の入力欄にも現在の値を入れておく
+      document.getElementById('custom-name').value = currentUser.name;
+      document.getElementById('custom-icon-url').value = currentUser.picture;
+
+      // 5. ログイン画面を隠し、メイン画面を表示
+      document.getElementById('login-area').classList.add('hidden');
+      document.getElementById('main-area').classList.remove('hidden');
+    }
+
+    // プロフィールの保存機能
+    function saveProfile() {
+      const newName = document.getElementById('custom-name').value;
+      const newIcon = document.getElementById('custom-icon-url').value;
+
+      if (!newName) {
+        alert("名前は必ず入力してください");
+        return;
+      }
+
+      // データを更新
+      currentUser.name = newName;
+      if (newIcon) {
+        currentUser.picture = newIcon;
+      }
+
+      // ブラウザ（localStorage）に保存
+      localStorage.setItem('customName', currentUser.name);
+      localStorage.setItem('customIcon', currentUser.picture);
+
+      // 画面上部の表示も更新
+      updateUI();
+      alert("プロフィールを保存しました！");
+    }
+
+    // 画面のアイコンと名前の表示を更新する関数
+    function updateUI() {
+      document.getElementById('display-name').textContent = currentUser.name;
+      document.getElementById('display-icon').src = currentUser.picture;
+    }
+
+    // Discordへメッセージ送信
+    function sendMessage() {
+      const messageInput = document.getElementById('message');
+      const message = messageInput.value;
+      
+      if (!message || !currentUser) return;
+
+      const payload = {
+        username: currentUser.name,       // 現在設定されている名前
+        avatar_url: currentUser.picture,  // 現在設定されているアイコン
+        content: message                  // 入力されたメッセージ
+      };
+
+      fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert("Discordへ送信しました！");
+        messageInput.value = ''; // 送信後、入力欄を空にする
+      })
+      .catch(error => alert("エラーが発生しました: " + error));
+    }
+
+    // ログアウト処理
+    function logout() {
+      currentUser = null;
+      document.getElementById('login-area').classList.remove('hidden');
+      document.getElementById('main-area').classList.add('hidden');
+    }
+
+    // JWTトークン解読用（おまじない）
+    function decodeJwtResponse(token) {
+      var base64Url = token.split('.')[1];
+      var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+  </script>
+</body>
+</html>

@@ -4,109 +4,50 @@
   <meta charset="UTF-8">
   <title>Discord風 Webチャット</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- FontAwesome (アイコン用) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
-      --bg-tertiary: #202225; /* 一番左のサーバーバー */
-      --bg-secondary: #2f3136; /* チャンネルリスト */
-      --bg-primary: #36393f; /* チャットエリア */
-      --bg-message-hover: #32353b;
-      --text-normal: #dcddde;
-      --text-muted: #8e9297;
-      --header-primary: #ffffff;
-      --accent: #5865F2; /* Discordの青色 */
-      --accent-hover: #4752C4;
-      --danger: #ed4245;
-      --input-bg: #40444b;
-      --scrollbar-thumb: #202225;
-      --scrollbar-track: #2e3338;
+      --bg-tertiary: #202225; --bg-secondary: #2f3136; --bg-primary: #36393f;
+      --bg-message-hover: #32353b; --text-normal: #dcddde; --text-muted: #8e9297;
+      --header-primary: #ffffff; --accent: #5865F2; --accent-hover: #4752C4;
+      --danger: #ed4245; --input-bg: #40444b;
     }
-
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: 'gg sans', 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-primary); color: var(--text-normal); display: flex; height: 100vh; overflow: hidden; }
+    body { margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg-primary); color: var(--text-normal); display: flex; height: 100vh; overflow: hidden; }
 
-    /* スクロールバーのカスタマイズ */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
-
-    /* --- ログイン画面 --- */
     #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; background-color: var(--bg-primary); position: absolute; z-index: 100; }
-    .login-box { background: var(--bg-secondary); padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); text-align: center; }
-    .login-box h2 { color: var(--header-primary); margin-top: 0; }
+    .login-box { background: var(--bg-secondary); padding: 40px; border-radius: 8px; text-align: center; }
     
-    /* --- メイン画面レイアウト --- */
     #app-screen { display: flex; width: 100vw; height: 100vh; }
-
-    /* 一番左のサーバーリスト（ダミー） */
-    .server-sidebar { width: 72px; background-color: var(--bg-tertiary); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
-    .server-icon { width: 48px; height: 48px; background-color: var(--bg-primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--text-normal); cursor: pointer; transition: 0.2s ease; }
-    .server-icon:hover { border-radius: 16px; background-color: var(--accent); color: white; }
-    .server-icon.active { border-radius: 16px; background-color: var(--accent); color: white; }
-    .server-separator { width: 32px; height: 2px; background-color: var(--bg-secondary); border-radius: 1px; }
-
-    /* チャンネルリストサイドバー */
     .sidebar { width: 240px; background-color: var(--bg-secondary); display: flex; flex-direction: column; }
-    .sidebar-header { height: 48px; padding: 0 16px; display: flex; align-items: center; font-weight: bold; color: var(--header-primary); border-bottom: 1px solid var(--bg-tertiary); box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; }
-    .sidebar-header:hover { background-color: rgba(255,255,255,0.02); }
-    
-    .channel-list { flex-grow: 1; padding: 12px 8px; overflow-y: auto; }
-    .channel-item { padding: 6px 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.95em; margin-bottom: 2px; }
-    .channel-item i { font-size: 1.1em; }
+    .sidebar-header { height: 48px; padding: 0 16px; display: flex; align-items: center; font-weight: bold; border-bottom: 1px solid var(--bg-tertiary); }
+    .channel-list { flex-grow: 1; padding: 12px 8px; }
+    .channel-item { padding: 6px 8px; margin-bottom: 4px; border-radius: 4px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; cursor: pointer; }
     .channel-item:hover { background-color: rgba(79,84,92,0.32); color: var(--text-normal); }
     .channel-item.active { background-color: rgba(79,84,92,0.6); color: var(--header-primary); }
 
-    /* ユーザーパネル */
     .user-panel { background-color: #292b2f; padding: 0 8px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-    .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px; border-radius: 4px; flex-grow: 1; overflow: hidden; }
-    .user-info:hover { background-color: rgba(79,84,92,0.32); }
+    .user-info { display: flex; align-items: center; gap: 8px; cursor: pointer; flex-grow: 1; overflow: hidden; }
     .user-info img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
     .user-text { display: flex; flex-direction: column; overflow: hidden; }
-    .user-text .name { color: var(--header-primary); font-size: 0.9em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .user-text .status { color: var(--text-muted); font-size: 0.75em; }
-    .user-controls { display: flex; gap: 4px; }
-    .user-controls button { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 8px; border-radius: 4px; }
-    .user-controls button:hover { background-color: rgba(79,84,92,0.32); color: var(--text-normal); }
+    .user-text .name { font-size: 0.9em; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 設定モーダル */
-    .settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; }
-    .settings-content { background: var(--bg-primary); width: 400px; padding: 24px; border-radius: 8px; }
-    .settings-content h3 { margin-top: 0; color: var(--header-primary); }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 8px; font-size: 0.8em; font-weight: bold; color: var(--text-muted); text-transform: uppercase; }
-    .form-group input[type="text"] { width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid #000; border-radius: 4px; color: var(--text-normal); font-size: 1em; outline: none; }
-    .form-group input[type="file"] { color: var(--text-muted); }
-    .btn-save { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1em; transition: 0.2s; }
-    .btn-save:hover { background: var(--accent-hover); }
-    .btn-close { background: transparent; color: var(--text-muted); border: none; padding: 10px; cursor: pointer; width: 100%; margin-top: 8px; }
-    .btn-close:hover { text-decoration: underline; }
-
-    /* チャットエリア */
-    .chat-container { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--bg-primary); min-width: 0; }
-    .chat-header { height: 48px; border-bottom: 1px solid var(--bg-tertiary); display: flex; align-items: center; padding: 0 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-    .chat-header i { color: var(--text-muted); margin-right: 8px; font-size: 1.2em; }
-    .chat-header .title { font-weight: bold; color: var(--header-primary); font-size: 1em; }
-
-    /* メッセージ表示エリア */
-    .chat-messages { flex-grow: 1; padding: 16px 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0; }
-    .message { display: flex; gap: 16px; padding: 4px 16px 4px 16px; margin-top: 12px; }
+    .chat-container { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--bg-primary); }
+    .chat-header { height: 48px; border-bottom: 1px solid var(--bg-tertiary); display: flex; align-items: center; padding: 0 16px; font-weight: bold; }
+    .chat-messages { flex-grow: 1; padding: 16px 0; overflow-y: auto; display: flex; flex-direction: column; }
+    
+    .message { display: flex; gap: 16px; padding: 4px 16px; margin-top: 12px; }
     .message:hover { background-color: var(--bg-message-hover); }
-    .message img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+    .message img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
     .message-content { flex-grow: 1; display: flex; flex-direction: column; }
     .message-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
-    .message-header .user-name { font-weight: 500; color: var(--header-primary); font-size: 1em; cursor: pointer; }
-    .message-header .user-name:hover { text-decoration: underline; }
+    .message-header .user-name { font-weight: 500; color: var(--header-primary); }
     .message-header .timestamp { font-size: 0.75em; color: var(--text-muted); }
-    .message-text { color: var(--text-normal); font-size: 1em; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
+    .message-text { color: var(--text-normal); word-break: break-word; white-space: pre-wrap; }
 
-    /* 入力エリア */
     .chat-input-area { padding: 0 16px 24px 16px; }
     .chat-input-wrapper { display: flex; align-items: center; background-color: var(--input-bg); border-radius: 8px; padding: 0 16px; gap: 12px; }
-    .chat-input-wrapper .plus-btn { color: var(--text-muted); cursor: pointer; background: var(--bg-secondary); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9em; }
-    .chat-input-wrapper input { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; font-size: 1em; padding: 14px 0; }
-    .chat-input-wrapper input::placeholder { color: var(--text-muted); }
-
+    .chat-input-wrapper input { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; padding: 14px 0; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -115,110 +56,65 @@
   <!-- ログイン画面 -->
   <div id="login-screen">
     <div class="login-box">
-      <h2>Discord風チャットへようこそ</h2>
-      <p style="color: var(--text-muted); margin-bottom: 24px;">Googleアカウントでログインしてください</p>
+      <h2 style="color:white;">ログイン</h2>
       <div id="g_id_onload"
            data-client_id="1088837422614-mme9r7callo83q6d8uga2ga12pteftjs.apps.googleusercontent.com" 
            data-callback="handleCredentialResponse"
-           data-auto_prompt="false"> <!-- 自動プロンプトはOFFにし、ボタンクリックにする -->
+           data-auto_prompt="false">
       </div>
       <div class="g_id_signin" data-type="standard" data-theme="filled_black"></div>
     </div>
   </div>
 
-  <!-- 設定モーダル -->
-  <div id="settings-modal" class="settings-modal">
-    <div class="settings-content">
-      <h3>プロフィール設定</h3>
-      <div class="form-group">
-        <label>表示名</label>
-        <input type="text" id="custom-name" placeholder="新しい名前を入力">
-      </div>
-      <div class="form-group">
-        <label>アイコンを変更 (ファイルを選択)</label>
-        <!-- ファイル選択にするだけでBase64化して保存します -->
-        <input type="file" id="custom-icon-file" accept="image/*">
-      </div>
-      <button class="btn-save" onclick="saveProfile()">保存する</button>
-      <button class="btn-close" onclick="closeSettings()">キャンセル</button>
-    </div>
-  </div>
-
   <!-- メイン画面 -->
   <div id="app-screen" class="hidden">
-    
-    <!-- 一番左のサーバーバー -->
-    <div class="server-sidebar">
-      <div class="server-icon active"><i class="fa-brands fa-discord fa-lg"></i></div>
-      <div class="server-separator"></div>
-      <!-- ダミーのサーバーアイコン -->
-      <div class="server-icon" style="background-image: url('https://picsum.photos/100'); background-size: cover;"></div>
-    </div>
-
-    <!-- チャンネル一覧サイドバー -->
     <div class="sidebar">
-      <div class="sidebar-header">マイサーバー <i class="fa-solid fa-chevron-down" style="margin-left: auto; font-size: 0.8em;"></i></div>
-      
+      <div class="sidebar-header">マイサーバー</div>
       <div class="channel-list" id="channel-list">
-        <!-- JSで動的にチャンネル一覧を生成します -->
+        <!-- チャンネルリストがここに生成されます -->
       </div>
-
-      <!-- ユーザーパネル -->
       <div class="user-panel">
-        <div class="user-info" onclick="openSettings()">
-          <img id="sidebar-icon" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User">
-          <div class="user-text">
-            <span class="name" id="sidebar-name">ユーザー名</span>
-            <span class="status">オンライン</span>
-          </div>
+        <div class="user-info">
+          <img id="sidebar-icon" src="">
+          <div class="user-text"><span class="name" id="sidebar-name">ユーザー</span></div>
         </div>
-        <div class="user-controls">
-          <button onclick="openSettings()" title="設定"><i class="fa-solid fa-gear"></i></button>
-          <button onclick="logout()" title="ログアウト" style="color: var(--danger);"><i class="fa-solid fa-right-from-bracket"></i></button>
-        </div>
+        <button onclick="logout()" style="background:none; border:none; color:var(--danger); cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i></button>
       </div>
     </div>
 
-    <!-- チャットメイン画面 -->
     <div class="chat-container">
-      <div class="chat-header">
-        <i class="fa-solid fa-hashtag"></i>
-        <div class="title" id="current-channel-title">雑談チャンネル</div>
-      </div>
-      
-      <!-- メッセージ表示エリア -->
-      <div class="chat-messages" id="chat-messages">
-        <!-- メッセージがここに動的に追加されます -->
-      </div>
-
-      <!-- 入力エリア -->
+      <div class="chat-header"><i class="fa-solid fa-hashtag" style="color:var(--text-muted); margin-right:8px;"></i> <span id="current-channel-title">一般</span></div>
+      <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-area">
         <div class="chat-input-wrapper">
-          <div class="plus-btn"><i class="fa-solid fa-plus"></i></div>
-          <input type="text" id="message-input" placeholder="# 雑談チャンネル にメッセージを送信" onkeypress="handleKeyPress(event)">
-          <i class="fa-solid fa-face-smile" style="color: var(--text-muted); cursor: pointer;"></i>
+          <input type="text" id="message-input" placeholder="# 一般 にメッセージを送信" onkeypress="handleKeyPress(event)">
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // --- チャンネル設定 ---
-    // ここに複数のチャンネルと対応するWebhook URLを登録します
+    // ★いただいたWebhook URLを組み込んだチャンネル設定
+    // IDは履歴取得（Step2）で使うための本物のチャンネルIDを後で入れます
     const channels = [
-      { id: '123456789012345678', name: '雑談チャンネル', webhook: 'YOUR_WEBHOOK_URL_1' },
-      { id: '876543210987654321', name: 'マイクラ連携', webhook: 'YOUR_WEBHOOK_URL_2' },
-      { id: '112233445566778899', name: 'お知らせ', webhook: 'YOUR_WEBHOOK_URL_3' }
+      { 
+        id: '111111111111111111', // ← 後で「一般」のチャンネルIDに変えます
+        name: '一般', 
+        webhook: 'https://discord.com/api/webhooks/1538126374131208192/DBVgsnjhQ69ZVmwj1lFdgGHhtEhppOijrhsWzdqdSI2AoS9uLo6D-Kc2OMZ7N1PcJKgT' 
+      },
+      { 
+        id: '222222222222222222', // ← 後で「サバイバル鯖」のチャンネルIDに変えます
+        name: 'サバイバル鯖', 
+        webhook: 'https://discord.com/api/webhooks/1538144498045947966/_63dPn0yzv1SThEfCKQW6vdVl0OjHgbr1T2yZ6xUgpThoAS4sYbb4jBda3WAYMfQev-b' 
+      }
     ];
 
     let currentUser = null;
-    let currentChannel = channels[0]; // 初期選択は最初のチャンネル
+    let currentChannel = channels[0];
     let pollInterval = null;
 
-    // --- アプリ初期化 ---
     window.onload = () => {
-      // ローカルストレージからログイン状態をチェック（ログイン情報の引き継ぎ）
-      const savedUser = localStorage.getItem('discordMockUser');
+      const savedUser = localStorage.getItem('discordUser');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         loginSuccess();
@@ -226,44 +122,24 @@
       renderChannelList();
     };
 
-    // Googleログイン完了時のコールバック
     function handleCredentialResponse(response) {
       const payload = decodeJwtResponse(response.credential);
-      
-      // 初回ログイン時はGoogleの情報をセット
-      currentUser = {
-        name: payload.name,
-        picture: payload.picture,
-        email: payload.email
-      };
-      
-      // カスタム設定があれば上書き
-      const savedName = localStorage.getItem('customName');
-      const savedIcon = localStorage.getItem('customIcon');
-      if (savedName) currentUser.name = savedName;
-      if (savedIcon) currentUser.picture = savedIcon;
-
-      // ログイン情報を保存して画面切り替え
-      localStorage.setItem('discordMockUser', JSON.stringify(currentUser));
+      currentUser = { name: payload.name, picture: payload.picture };
+      localStorage.setItem('discordUser', JSON.stringify(currentUser));
       loginSuccess();
     }
 
-    // ログイン成功時の処理
     function loginSuccess() {
       document.getElementById('sidebar-name').textContent = currentUser.name;
       document.getElementById('sidebar-icon').src = currentUser.picture;
-
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('app-screen').classList.remove('hidden');
-
-      switchChannel(currentChannel.id); // 初期チャンネルの読み込み開始
+      switchChannel(currentChannel.id);
     }
 
-    // --- チャンネル関連 ---
     function renderChannelList() {
       const listDiv = document.getElementById('channel-list');
       listDiv.innerHTML = '';
-      
       channels.forEach(ch => {
         const div = document.createElement('div');
         div.className = `channel-item ${ch.id === currentChannel.id ? 'active' : ''}`;
@@ -275,170 +151,102 @@
 
     function switchChannel(channelId) {
       currentChannel = channels.find(c => c.id === channelId);
-      
-      // UIの更新
       renderChannelList();
       document.getElementById('current-channel-title').textContent = currentChannel.name;
-      document.getElementById('message-input').placeholder = `メッセージを送信: # ${currentChannel.name}`;
-
-      // メッセージエリアをクリアして再取得
+      document.getElementById('message-input').placeholder = `# ${currentChannel.name} にメッセージを送信`;
+      
       document.getElementById('chat-messages').innerHTML = '';
       startPolling();
     }
 
-    // --- メッセージ取得・送信 ---
+    // --- メッセージの取得（後でVercelと連携） ---
     function startPolling() {
       fetchMessages();
       if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(fetchMessages, 4000); // 4秒間隔
+      pollInterval = setInterval(fetchMessages, 4000);
     }
 
     async function fetchMessages() {
       try {
-        // ※ VercelのAPIから取得する前提のコード。
-        // currentChannel.id をパラメータに渡して対応する履歴を取得します。
+        // VercelのAPIを呼び出す設定 (現状はまだAPIが無いのでエラーになりますが、コードは完成させています)
         const res = await fetch(`/api/messages?channelId=${currentChannel.id}`);
         if (!res.ok) return;
-        const messages = await res.json();
         
+        const messages = await res.json();
         renderMessages(messages);
       } catch (e) {
-        console.error('メッセージ取得失敗', e);
+        // console.log('メッセージ取得待機中...'); // エラーがうるさいのでコメントアウト
       }
     }
 
     function renderMessages(messages) {
       const container = document.getElementById('chat-messages');
-      container.innerHTML = ''; // 一旦クリア（差分更新にするとより良いですが今回はシンプルに）
-
-      // Discord風に日付を整形する関数
-      const formatDate = (dateString) => {
-        if (!dateString) return '今日';
-        const d = new Date(dateString);
-        return `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-      };
-
-      // APIの返り値が新しい順(降順)か古い順(昇順)かで処理が変わりますが、
-      // Discordのように上から下へ古い順に並べる前提とします。
-      messages.forEach(msg => {
+      container.innerHTML = ''; 
+      messages.slice().reverse().forEach(msg => {
         const div = document.createElement('div');
         div.className = 'message';
-        
-        const avatar = msg.author.avatar 
-          ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png` 
-          : (msg.author.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png');
+        let avatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
+        if (msg.author.avatar) {
+          avatar = `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png`;
+        } else if (msg.author.avatar_url) {
+          avatar = msg.author.avatar_url; 
+        }
+        const d = new Date(msg.timestamp);
+        const timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 
         div.innerHTML = `
-          <img src="${avatar}" alt="icon">
+          <img src="${avatar}">
           <div class="message-content">
             <div class="message-header">
               <span class="user-name">${escapeHtml(msg.author.username)}</span>
-              <span class="timestamp">${formatDate(msg.timestamp)}</span>
+              <span class="timestamp">${timeStr}</span>
             </div>
             <div class="message-text">${escapeHtml(msg.content)}</div>
           </div>
         `;
         container.appendChild(div);
       });
-
-      // 最新のメッセージ（一番下）にスクロール
       container.scrollTop = container.scrollHeight;
     }
 
+    // --- メッセージの送信 ---
     function sendMessage() {
       const input = document.getElementById('message-input');
       const text = input.value.trim();
       if (!text || !currentUser) return;
 
-      const payload = {
-        username: currentUser.name,
-        avatar_url: currentUser.picture,
-        content: text
-      };
-
-      // 現在選択中のチャンネルのWebhook URLに送信
       fetch(currentChannel.webhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
+        body: JSON.stringify({
+          username: currentUser.name,
+          avatar_url: currentUser.picture,
+          content: text
+        })
+      }).then(() => {
         input.value = '';
-        setTimeout(fetchMessages, 500); // 送信直後に再取得
-      })
-      .catch(err => alert('送信エラー: ' + err));
+        setTimeout(fetchMessages, 500);
+      });
     }
 
     function handleKeyPress(e) {
-      if (e.key === 'Enter') {
-        sendMessage();
-        e.preventDefault();
-      }
+      if (e.key === 'Enter') sendMessage();
     }
 
-    // --- プロフィール設定 (画像ファイル対応) ---
-    function openSettings() {
-      document.getElementById('custom-name').value = currentUser.name;
-      document.getElementById('settings-modal').style.display = 'flex';
-    }
-
-    function closeSettings() {
-      document.getElementById('settings-modal').style.display = 'none';
-      document.getElementById('custom-icon-file').value = ''; // ファイル選択リセット
-    }
-
-    function saveProfile() {
-      const newName = document.getElementById('custom-name').value;
-      const fileInput = document.getElementById('custom-icon-file');
-      
-      if (!newName) return alert('表示名を入力してください');
-      
-      currentUser.name = newName;
-      localStorage.setItem('customName', newName);
-
-      // 画像ファイルが選択されている場合の処理 (FileReaderでBase64変換)
-      if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const base64Image = e.target.result;
-          currentUser.picture = base64Image;
-          localStorage.setItem('customIcon', base64Image);
-          updateProfileUI();
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-      } else {
-        updateProfileUI();
-      }
-    }
-
-    function updateProfileUI() {
-      document.getElementById('sidebar-name').textContent = currentUser.name;
-      document.getElementById('sidebar-icon').src = currentUser.picture;
-      // セッションの保存情報も更新
-      localStorage.setItem('discordMockUser', JSON.stringify(currentUser));
-      closeSettings();
-    }
-
-    // --- その他ユーティリティ ---
     function logout() {
-      localStorage.removeItem('discordMockUser');
+      localStorage.removeItem('discordUser');
       location.reload();
     }
 
     function decodeJwtResponse(token) {
       var base64Url = token.split('.')[1];
       var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
+      return JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
     }
 
     function escapeHtml(str) {
       if (!str) return '';
-      return str.replace(/[&'`<>]/g, function(match) {
-        return { '&': '&amp;', "'": '&#x27;', '`': '&#x60;', '<': '&lt;', '>': '&gt;' }[match];
-      });
+      return str.replace(/[&'`<>]/g, match => ({ '&': '&amp;', "'": '&#x27;', '`': '&#x60;', '<': '&lt;', '>': '&gt;' }[match]));
     }
   </script>
 </body>

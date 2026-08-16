@@ -34,13 +34,62 @@
       overflow: hidden; 
     }
 
+    /* --- ログイン画面のスタイリング --- */
     #login-screen { 
       display: flex; flex-direction: column; align-items: center; justify-content: center; 
-      width: 100vw; height: 100vh; height: 100dvh; background-color: var(--bg-primary); 
+      width: 100vw; height: 100vh; height: 100dvh; 
+      background: linear-gradient(135deg, #1e2124 0%, #282b30 100%); /* 少しリッチなグラデーション背景 */
       position: absolute; z-index: 100; 
     }
-    .login-box { background: var(--bg-secondary); padding: 40px; border-radius: 8px; text-align: center; width: 90%; max-width: 400px; }
     
+    /* PC向けデフォルトサイズ */
+    .login-box { 
+      background: var(--bg-secondary); 
+      padding: 40px 32px; 
+      border-radius: 12px; 
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); 
+      text-align: center; 
+      width: 90%; 
+      max-width: 440px; 
+    }
+
+    .login-title {
+      color: var(--header-primary);
+      margin: 0 0 8px 0;
+      font-size: 1.8em;
+      letter-spacing: 1px;
+    }
+
+    .login-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-size: 0.95em;
+    }
+
+    .login-divider {
+      display: flex; align-items: center; margin: 24px 0 16px 0;
+    }
+    .login-divider hr {
+      flex-grow: 1; border: none; border-top: 1px solid var(--bg-tertiary);
+    }
+    .login-divider span {
+      padding: 0 12px; color: var(--text-muted); font-size: 0.85em;
+    }
+
+    /* ゲストログイン用ボタン */
+    .guest-btn { 
+      background: #4f545c; color: white; border: none; padding: 14px; width: 100%; 
+      border-radius: 4px; cursor: pointer; font-size: 1.05em; font-weight: bold; 
+      transition: background 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .guest-btn:hover { background: #5d6269; }
+    .guest-btn:active { transform: translateY(1px); }
+
+    .g-signin-wrapper {
+      display: flex; justify-content: center; width: 100%;
+    }
+
+    /* --- メインアプリ --- */
     #app-screen { display: flex; width: 100vw; height: 100vh; height: 100dvh; position: relative; }
     
     /* --- サイドバー --- */
@@ -124,8 +173,18 @@
     .modal-content { background: var(--bg-primary); width: 90%; max-width: 400px; padding: 24px; border-radius: 8px; }
     .modal-input { width:100%; padding:10px; background:var(--bg-tertiary); border:none; color:white; border-radius:4px; margin-bottom:15px; outline:none; }
     
-    /* --- スマホ向け --- */
+    /* --- スマホ向け縮尺・レスポンシブ --- */
     @media (max-width: 768px) {
+      /* ログイン画面のスマホ縮尺調整 */
+      .login-box {
+        padding: 32px 20px;
+        max-width: 360px;
+      }
+      .login-title { font-size: 1.5em; }
+      .login-subtitle { font-size: 0.85em; margin-bottom: 24px; }
+      .guest-btn { font-size: 1em; padding: 12px; }
+
+      /* メインアプリのスマホ調整 */
       .sidebar { position: fixed; left: -260px; top: 0; bottom: 0; z-index: 1000; width: 260px; box-shadow: 2px 0 5px rgba(0,0,0,0.5); }
       .sidebar.show { left: 0; }
       .mobile-menu-btn { display: inline-block !important; }
@@ -141,9 +200,23 @@
   <!-- ログイン画面 -->
   <div id="login-screen">
     <div class="login-box">
-      <h2 style="color:white; margin-top:0;">村サーバーへようこそ</h2>
-      <div id="g_id_onload" data-client_id="1088837422614-mme9r7callo83q6d8uga2ga12pteftjs.apps.googleusercontent.com" data-callback="handleCredentialResponse"></div>
-      <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large"></div>
+      <h2 class="login-title">村サーバー</h2>
+      <div class="login-subtitle">webDiscordチャット ログイン</div>
+      
+      <!-- Googleログイン -->
+      <div class="g-signin-wrapper">
+        <div id="g_id_onload" data-client_id="1088837422614-mme9r7callo83q6d8uga2ga12pteftjs.apps.googleusercontent.com" data-callback="handleCredentialResponse"></div>
+        <div class="g_id_signin" data-type="standard" data-theme="filled_black" data-size="large"></div>
+      </div>
+
+      <!-- ゲストログイン -->
+      <div class="login-divider">
+        <hr><span>または</span><hr>
+      </div>
+      <button class="guest-btn" onclick="guestLogin()">
+        <i class="fa-solid fa-user-secret"></i> ゲストとしてログイン
+      </button>
+
     </div>
   </div>
 
@@ -247,11 +320,26 @@
       }
     };
 
+    // --- Googleログイン処理 ---
     function handleCredentialResponse(r) {
       const p = JSON.parse(decodeURIComponent(atob(r.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
       currentUser = { name: p.name, picture: p.picture };
       setCookie('discordChatName', p.name, 30); 
       localStorage.setItem('discordChatPic', p.picture);
+      loginSuccess();
+    }
+
+    // --- ゲストログイン処理 ---
+    function guestLogin() {
+      const randomId = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const guestName = "ゲスト_" + randomId;
+      const defaultIcon = "https://cdn.discordapp.com/embed/avatars/0.png";
+
+      currentUser = { name: guestName, picture: defaultIcon };
+      
+      setCookie('discordChatName', guestName, 30);
+      localStorage.setItem('discordChatPic', defaultIcon);
+      
       loginSuccess();
     }
 
@@ -293,7 +381,6 @@
           pItem.className = `channel-item`;
           pItem.id = `ch-${p.id}`;
           
-          // フォーラムも通常の吹き出しアイコンにする
           let icon = p.type === 15 ? 'fa-comments' : 'fa-hashtag';
           
           pItem.innerHTML = `<i class="fa-solid ${icon}"></i> ${escapeHtml(p.name)}`;
@@ -329,7 +416,6 @@
       currentChannelId = id; currentChannelName = name;
       currentIsThread = isThread; currentParentId = parentId; currentType = type;
       
-      // チャンネル移動時にメッセージの記憶をリセット
       lastMessagesJson = "";
       
       document.getElementById('current-channel-title').textContent = name;
@@ -345,11 +431,9 @@
         if (pollInterval) clearInterval(pollInterval);
 
         if (!isThread && type === 15) {
-            // フォーラムの場合はリストを表示
             renderForumList(id);
             document.getElementById('input-area').style.display = 'none';
         } else {
-            // 通常のチャット画面
             document.getElementById('input-area').style.display = 'block'; 
             document.getElementById('chat-messages').innerHTML = ''; 
             startPolling();
@@ -400,7 +484,6 @@
       } catch(e) {}
     }
 
-    // ★ メッセージ編集
     async function editMessage(msgId, oldContent) {
         const newContent = prompt("メッセージを編集:", oldContent);
         if (newContent === null || newContent === oldContent) return;
@@ -411,14 +494,13 @@
                 body: JSON.stringify({ action: 'editMessage', channelId: currentChannelId, messageId: msgId, content: newContent })
             });
             if(res.ok) {
-                lastMessagesJson = ""; // 強制再描画
+                lastMessagesJson = ""; 
                 fetchMessages();
             }
             else alert("編集に失敗しました。Webサイトから送信されたメッセージのみ編集可能です。");
         } catch(e) { console.error(e); }
     }
 
-    // ★ メッセージ削除
     async function deleteMessage(msgId) {
         if(!confirm("このメッセージを削除しますか？\n(注意: 全ユーザーのメッセージが対象になります)")) return;
         try {
@@ -427,7 +509,7 @@
                 body: JSON.stringify({ action: 'deleteMessage', channelId: currentChannelId, messageId: msgId })
             });
             if(res.ok) {
-                lastMessagesJson = ""; // 強制再描画
+                lastMessagesJson = ""; 
                 fetchMessages();
             }
             else alert("削除に失敗しました。");
@@ -435,13 +517,11 @@
     }
 
     function renderMessages(messages) {
-      // メッセージに変化がない場合は再描画しない（コピペやスクロールの妨害を防ぐ）
       const newMessagesJson = JSON.stringify(messages);
       if (lastMessagesJson === newMessagesJson) return;
       lastMessagesJson = newMessagesJson;
 
       const container = document.getElementById('chat-messages'); 
-      // 現在のスクロール状態を記憶
       const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
       const currentScrollTop = container.scrollTop;
       
@@ -491,7 +571,6 @@
             textContent += rh;
         }
 
-        // 編集・削除ボタン
         const safeContent = encodeURIComponent(msg.content || '');
         let actionsHtml = `<div class="msg-actions">
             <button class="action-btn" title="メッセージを編集" onclick="editMessage('${msg.id}', decodeURIComponent('${safeContent}'))"><i class="fa-solid fa-pen"></i></button>
@@ -502,7 +581,6 @@
         container.appendChild(div);
       });
       
-      // スクロール位置の復元
       if (isScrolledToBottom) {
           container.scrollTop = container.scrollHeight;
       } else {
@@ -551,7 +629,7 @@
         if (!res.ok) alert("送信失敗: " + ((await res.json()).error || "不明なエラー"));
         else { 
             input.value = ''; removeFile(); 
-            lastMessagesJson = ""; // 強制再描画
+            lastMessagesJson = ""; 
             setTimeout(fetchMessages, 500); 
         }
       } catch(err) { alert("通信エラー: " + err); }

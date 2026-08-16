@@ -14,7 +14,6 @@ export default async function handler(req, res) {
       
       let list = [];
       if (Array.isArray(channels)) {
-        // type 15 = フォーラムチャンネル
         const mainChannels = channels.filter(c => c.type === 0 || c.type === 5 || c.type === 15);
         mainChannels.sort((a, b) => a.position - b.position);
         
@@ -36,7 +35,7 @@ export default async function handler(req, res) {
       return res.status(200).json(await response.json());
     }
     
-    // ③ メッセージ送信 / 削除
+    // ③ 各種アクションの実行 (送信・削除・編集)
     if (req.method === 'POST') {
       const { action } = req.body;
       
@@ -47,7 +46,37 @@ export default async function handler(req, res) {
           method: 'DELETE',
           headers: { 'Authorization': `Bot ${BOT_TOKEN}` }
         });
-        if (!delRes.ok) throw new Error('メッセージの削除に失敗しました。Botに「メッセージの管理」権限が必要です。');
+        if (!delRes.ok) throw new Error('メッセージの削除に失敗しました。');
+        return res.status(200).json({ success: true });
+      }
+
+      // ★追加: 編集処理 (Webhook APIを利用)
+      if (action === 'editMessage') {
+        const { channelId, messageId, content } = req.body;
+        
+        const chRes = await fetch(`https://discord.com/api/v10/channels/${channelId}`, { headers: { 'Authorization': `Bot ${BOT_TOKEN}` } });
+        const channel = await chRes.json();
+        
+        const isThread = [10, 11, 12].includes(channel.type);
+        const parentId = isThread ? channel.parent_id : channelId;
+        
+        // メッセージを編集するためには対象WebhookのTokenが必要
+        let hooksRes = await fetch(`https://discord.com/api/v10/channels/${parentId}/webhooks`, { headers: { 'Authorization': `Bot ${BOT_TOKEN}` } });
+        let hooks = await hooksRes.json();
+        let webhook = Array.isArray(hooks) ? hooks.find(h => h.token) : null;
+        
+        if (!webhook) throw new Error('Webhookが見つかりません。');
+        
+        let url = `https://discord.com/api/webhooks/${webhook.id}/${webhook.token}/messages/${messageId}`;
+        if (isThread) url += `?thread_id=${channelId}`;
+
+        const editRes = await fetch(url, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: content }) // 本文のみ更新
+        });
+        
+        if (!editRes.ok) throw new Error('メッセージの編集に失敗しました。本家Discordから送信された他人のメッセージは編集できません。');
         return res.status(200).json({ success: true });
       }
 
@@ -98,7 +127,6 @@ export default async function handler(req, res) {
         const formData = new FormData();
         formData.append('payload_json', JSON.stringify(payload));
         
-        // ★汎用ファイル添付処理
         if (fileBase64) {
           try {
             const base64Response = await fetch(fileBase64);

@@ -85,11 +85,12 @@
     .msg-attachment-file { display: inline-flex; align-items: center; gap: 8px; background: var(--bg-secondary); padding: 10px; border-radius: 4px; margin-top: 8px; text-decoration: none; color: var(--accent); border: 1px solid var(--bg-tertiary); }
     .embed-box { border-left: 4px solid var(--accent); background: rgba(0,0,0,0.15); padding: 8px 12px; margin-top: 4px; border-radius: 4px; }
     
-    /* 削除ボタン */
+    /* アクションボタン (編集・削除) */
     .msg-actions { display: none; position: absolute; right: 16px; top: -8px; background: var(--bg-secondary); border: 1px solid var(--bg-tertiary); border-radius: 4px; padding: 4px; }
     .message:hover .msg-actions { display: flex; gap: 8px; }
     .action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
-    .action-btn:hover { color: var(--danger); }
+    .action-btn:hover { color: var(--header-primary); }
+    .action-btn.delete:hover { color: var(--danger); }
 
     /* リアクション・投票UI */
     .reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
@@ -106,17 +107,18 @@
     .forum-meta { font-size: 0.85em; color: var(--text-muted); display: flex; gap: 12px; }
 
     /* --- 入力エリア --- */
-    .chat-input-area { padding: 0 16px 24px 16px; flex-shrink: 0; position: relative; }
+    .chat-input-area { padding: 0 16px 24px 16px; flex-shrink: 0; position: relative; width: 100%; }
     .preview-container { display: none; background: var(--bg-secondary); padding: 12px; border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--bg-tertiary); position: relative; }
     .preview-container .preview-media { max-height: 100px; border-radius: 4px; }
     .preview-close { position: absolute; top: 8px; left: 100px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; }
     
-    .chat-input-wrapper { display: flex; align-items: center; background-color: var(--input-bg); border-radius: 8px; padding: 0 16px; gap: 12px; }
+    /* ここを修正：横幅いっぱい (width:100%) に広がるようにしました */
+    .chat-input-wrapper { display: flex; align-items: center; background-color: var(--input-bg); border-radius: 8px; padding: 0 16px; gap: 12px; width: 100%; }
     .has-preview .chat-input-wrapper { border-radius: 0 0 8px 8px; }
     
     .file-upload-btn { color: var(--text-muted); cursor: pointer; font-size: 1.2em; padding: 10px 0; }
     .file-upload-btn:hover { color: var(--text-normal); }
-    .chat-input-wrapper input[type="text"] { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; padding: 14px 0; font-size: 1em; }
+    .chat-input-wrapper input[type="text"] { flex-grow: 1; background: transparent; border: none; color: var(--text-normal); outline: none; padding: 14px 0; font-size: 1em; width: 100%; }
 
     /* --- 各種モーダル --- */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; }
@@ -137,7 +139,6 @@
 </head>
 <body>
 
-  <!-- ログイン画面 -->
   <div id="login-screen">
     <div class="login-box">
       <h2 style="color:white; margin-top:0;">村サーバーへようこそ</h2>
@@ -146,7 +147,6 @@
     </div>
   </div>
 
-  <!-- 設定画面モーダル -->
   <div id="settings-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 style="margin-top:0;">プロフィール設定</h3>
@@ -159,7 +159,6 @@
     </div>
   </div>
 
-  <!-- 新規スレッド作成モーダル -->
   <div id="thread-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 style="margin-top:0;">スレッドを作成</h3>
@@ -172,7 +171,6 @@
     </div>
   </div>
 
-  <!-- メイン画面 -->
   <div id="app-screen" class="hidden">
     <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMenu()"></div>
 
@@ -210,7 +208,6 @@
         <div class="chat-input-wrapper">
           <label class="file-upload-btn" title="ファイルを添付 (画像, 動画, PDFなど)">
             <i class="fa-solid fa-circle-plus"></i>
-            <!-- acceptを*/*に変更して全ファイル対応に -->
             <input type="file" id="chat-file-input" accept="*/*" style="display:none;" onchange="handleFileSelect(event)">
           </label>
           <input type="text" id="message-input" placeholder="メッセージを送信" onkeypress="handleKeyPress(event)">
@@ -227,11 +224,7 @@
     let currentParentId = null;
     let currentType = 0;
     let pollInterval = null;
-    
-    // 全チャンネルとスレッドのデータを保持
     let allChannelsData = [];
-
-    // ファイル用変数
     let selectedFileBase64 = null; 
     let selectedFileName = null;
 
@@ -266,7 +259,6 @@
       try {
         const res = await fetch('/api/discord?action=getChannels'); 
         allChannelsData = await res.json();
-        
         const listDiv = document.getElementById('channel-list'); 
         listDiv.innerHTML = '';
         
@@ -293,9 +285,8 @@
           pItem.className = `channel-item`;
           pItem.id = `ch-${p.id}`;
           
-          // タイプ15はフォーラム
+          // フォーラムアイコンを標準の吹き出しに戻しました
           let icon = p.type === 15 ? 'fa-comments' : 'fa-hashtag';
-          if (p.type === 15) icon = 'fa-box-archive'; // フォーラムっぽいアイコン
           
           pItem.innerHTML = `<i class="fa-solid ${icon}"></i> ${escapeHtml(p.name)}`;
           pItem.onclick = () => switchChannel(p.id, p.name, false, p.id, p.type);
@@ -332,8 +323,6 @@
       
       document.getElementById('current-channel-title').textContent = name;
       document.getElementById('message-input').placeholder = `${name} にメッセージ`;
-      
-      // 親チャンネルで、フォーラムでない場合のみスレッド作成ボタンを表示
       document.getElementById('btn-open-thread').style.display = (!isThread && type !== 15) ? 'block' : 'none';
       
       updateChannelUI();
@@ -344,12 +333,11 @@
         
         if (pollInterval) clearInterval(pollInterval);
 
-        // ★親フォーラムチャンネル (type: 15) が選択された場合、リストを表示する
         if (!isThread && type === 15) {
             renderForumList(id);
-            document.getElementById('input-area').style.display = 'none'; // フォーラム親にはメッセージを送れない
+            document.getElementById('input-area').style.display = 'none';
         } else {
-            document.getElementById('input-area').style.display = 'flex'; // 通常チャット用
+            document.getElementById('input-area').style.display = 'block'; 
             document.getElementById('chat-messages').innerHTML = ''; 
             startPolling();
         }
@@ -368,7 +356,6 @@
       if(tList) tList.classList.add('show');
     }
 
-    // ★フォーラムのリスト表示関数
     function renderForumList(forumId) {
         const container = document.getElementById('chat-messages');
         const threads = allChannelsData.filter(t => t.isThread && t.parentId === forumId);
@@ -381,9 +368,7 @@
                 html += `
                 <div class="forum-card" onclick="switchChannel('${t.id}', '${escapeHtml(t.name)}', true, '${forumId}', ${t.type})">
                     <div class="forum-title">💬 ${escapeHtml(t.name)}</div>
-                    <div class="forum-meta">
-                        <span>クリックしてスレッドを開く</span>
-                    </div>
+                    <div class="forum-meta"><span>クリックしてスレッドを開く</span></div>
                 </div>`;
             });
         }
@@ -400,9 +385,24 @@
       } catch(e) {}
     }
 
-    // ★メッセージ削除関数（簡易版）
+    // ★ メッセージ編集機能
+    async function editMessage(msgId, oldContent) {
+        const newContent = prompt("メッセージを編集:", oldContent);
+        if (newContent === null || newContent === oldContent) return;
+        
+        try {
+            const res = await fetch('/api/discord', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'editMessage', channelId: currentChannelId, messageId: msgId, content: newContent })
+            });
+            if(res.ok) fetchMessages();
+            else alert("編集に失敗しました。このWebサイトから送信されたメッセージのみ編集可能です。");
+        } catch(e) { console.error(e); }
+    }
+
+    // ★ メッセージ削除機能
     async function deleteMessage(msgId) {
-        if(!confirm("このメッセージを削除しますか？\n(注意: Webhookの仕様上、Bot権限で削除されます)")) return;
+        if(!confirm("このメッセージを削除しますか？\n(注意: 全ユーザーのメッセージが削除対象になります)")) return;
         try {
             const res = await fetch('/api/discord', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -415,7 +415,6 @@
 
     function renderMessages(messages) {
       const container = document.getElementById('chat-messages'); 
-      // スクロール位置を保持するための計算
       const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 50;
       
       container.innerHTML = ''; 
@@ -425,7 +424,6 @@
         const d = new Date(msg.timestamp); const timeStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         let textContent = escapeHtml(msg.content);
         
-        // ★添付ファイルの描画（動画・画像・その他ファイルに対応）
         if (msg.attachments) msg.attachments.forEach(att => {
           if (att.content_type && att.content_type.startsWith('image/')) {
               textContent += `<br><img src="${att.url}" class="msg-attachment-media" onclick="window.open('${att.url}')" style="cursor:pointer; object-fit:contain;">`;
@@ -436,7 +434,6 @@
           }
         });
         
-        // Embeds
         if (msg.embeds) msg.embeds.forEach(em => {
           let col = em.color ? '#' + em.color.toString(16).padStart(6,'0') : 'var(--accent)';
           let eh = `<div class="embed-box" style="border-left-color:${col};">`;
@@ -446,20 +443,16 @@
           textContent += eh + `</div>`;
         });
 
-        // ★投票 (Polls) の描画 (閲覧のみ)
         if (msg.poll) {
             let ph = `<div class="poll-box"><div class="poll-question">📊 ${escapeHtml(msg.poll.question.text)}</div>`;
             msg.poll.answers.forEach(ans => {
                 let emojiStr = ans.poll_media.emoji ? (ans.poll_media.emoji.id ? `(絵文字)` : ans.poll_media.emoji.name) + " " : "";
-                ph += `<div class="poll-answer">
-                        <span>${emojiStr}${escapeHtml(ans.poll_media.text)}</span>
-                       </div>`;
+                ph += `<div class="poll-answer"><span>${emojiStr}${escapeHtml(ans.poll_media.text)}</span></div>`;
             });
             ph += `<div style="font-size:0.8em; color:var(--text-muted); margin-top:8px;">※Web版では投票の閲覧のみ可能です</div></div>`;
             textContent += ph;
         }
 
-        // ★リアクションの描画 (閲覧のみ)
         if (msg.reactions && msg.reactions.length > 0) {
             let rh = `<div class="reactions">`;
             msg.reactions.forEach(react => {
@@ -470,9 +463,11 @@
             textContent += rh;
         }
 
-        // アクションボタン (削除)
+        // ★ 編集・削除ボタンの描画
+        const safeContent = encodeURIComponent(msg.content || '');
         let actionsHtml = `<div class="msg-actions">
-            <button class="action-btn" title="メッセージを削除" onclick="deleteMessage('${msg.id}')"><i class="fa-solid fa-trash"></i></button>
+            <button class="action-btn" title="メッセージを編集" onclick="editMessage('${msg.id}', decodeURIComponent('${safeContent}'))"><i class="fa-solid fa-pen"></i></button>
+            <button class="action-btn delete" title="メッセージを削除" onclick="deleteMessage('${msg.id}')"><i class="fa-solid fa-trash"></i></button>
         </div>`;
 
         div.innerHTML = `<img src="${avatar}" class="avatar"><div class="message-content"><div class="message-header"><span class="user-name">${escapeHtml(msg.author.username)}</span><span style="font-size:0.75em; color:var(--text-muted);">${timeStr}</span></div><div class="message-text">${textContent}</div></div>${actionsHtml}`;
@@ -484,22 +479,16 @@
       }
     }
 
-    // ★ファイルアップロード処理の汎用化
     function handleFileSelect(e) {
       const f = e.target.files[0]; if(!f) return; 
-      
-      // サイズチェック (Base64エンコード時の負荷とDiscord制限考慮: 約8MB)
       if (f.size > 8 * 1024 * 1024) {
           alert("ファイルサイズが大きすぎます。8MB以下のファイルを選択してください。");
           return e.target.value = '';
       }
-      
       selectedFileName = f.name;
       const r = new FileReader(); 
       r.onload = evt => {
         selectedFileBase64 = evt.target.result; 
-        
-        // プレビューの表示切り替え
         let pContent = document.getElementById('preview-content');
         if (f.type.startsWith('image/')) {
             pContent.innerHTML = `<img src="${selectedFileBase64}" class="preview-media">`;
@@ -508,7 +497,6 @@
         } else {
             pContent.innerHTML = `<div style="padding:10px; background:#202225; border-radius:4px;"><i class="fa-solid fa-file"></i> ${escapeHtml(selectedFileName)}</div>`;
         }
-        
         document.getElementById('preview-container').style.display = 'block'; 
         document.getElementById('input-area').classList.add('has-preview');
       }; 
@@ -527,7 +515,6 @@
       try {
         const res = await fetch('/api/discord', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          // imageBase64 を fileBase64 に変更
           body: JSON.stringify({ action: 'sendMessage', channelId: currentChannelId, username: currentUser.name, avatar_url: currentUser.picture, content: text, fileBase64: selectedFileBase64, fileName: selectedFileName })
         });
         if (!res.ok) alert("送信失敗: " + ((await res.json()).error || "不明なエラー"));
@@ -537,7 +524,6 @@
     }
     function handleKeyPress(e) { if(e.key === 'Enter') sendMessage(); }
 
-    /* --- スレッド作成モーダル処理 --- */
     function openThreadModal() {
       document.getElementById('new-thread-name').value = ''; document.getElementById('new-thread-msg').value = '';
       document.getElementById('thread-modal').style.display = 'flex';

@@ -14,6 +14,7 @@ export default async function handler(req, res) {
       
       let list = [];
       if (Array.isArray(channels)) {
+        // type 0: Text, 5: Announcement, 15: Forum
         const mainChannels = channels.filter(c => c.type === 0 || c.type === 5 || c.type === 15);
         mainChannels.sort((a, b) => a.position - b.position);
         
@@ -39,7 +40,7 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { action } = req.body;
       
-      // 削除処理 (Bot権限を利用)
+      // ▼ メッセージ削除処理 (Bot権限を利用)
       if (action === 'deleteMessage') {
         const { channelId, messageId } = req.body;
         const delRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`, {
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // ★追加: 編集処理 (Webhook APIを利用)
+      // ▼ メッセージ編集処理 (Webhook APIを利用)
       if (action === 'editMessage') {
         const { channelId, messageId, content } = req.body;
         
@@ -80,7 +81,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true });
       }
 
-      // 送信処理 (Webhook方式)
+      // ▼ メッセージ送信処理 (Webhook方式)
       if (action === 'sendMessage') {
         const { channelId, content, username, avatar_url, fileBase64, fileName, threadName } = req.body;
         
